@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1040338033430",
+    "project_id": "priceless-1b8a9",
+    "storage_bucket": "priceless-1b8a9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040338033430:android:6749ec7b87a760e9a50e37",
+        "android_client_info": {
+          "package_name": "com.example.priceless"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1040338033430-71m8qs0rbkrcntvbdeqkk0crooi3unfe.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.priceless",
+            "certificate_hash": "3fe68c8006e54342f070bd3d925cc3a3d8494e65"
+          }
+        },
+        {
+          "client_id": "1040338033430-p0440fq1f4d5rvftm2tjma1mopklae7c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyABdLZ-gKrqMhK-GEOlTgLyzYMVreQSHLs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1040338033430-p0440fq1f4d5rvftm2tjma1mopklae7c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

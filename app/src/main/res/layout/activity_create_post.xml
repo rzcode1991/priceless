@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp"
+    tools:context=".CreatePostActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="start"
+        android:layout_marginBottom="8dp">
+
+        <ImageView
+            android:id="@+id/iv_profile_pic_create_post"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="center"
+            android:layout_marginEnd="8dp"
+            android:src="@drawable/ic_baseline_account_circle_24"/>
+
+        <TextView
+            android:id="@+id/tv_user_name_create_post"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="userName"
+            android:textSize="15sp"
+            android:textColor="@color/black"
+            android:layout_gravity="center"/>
+
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <ScrollView
+                        android:layout_width="250dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="150dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_main_post_content"
+                            android:layout_width="250dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="150dp"
+                            android:gravity="start|top"
+                            android:padding="10dp"
+                            android:textSize="20sp"
+                            android:textColor="#2b2d42"
+                            android:inputType="textMultiLine"
+                            android:hint="text"
+                            android:background="@drawable/main_edit_text_bg"/>
+
+                    </ScrollView>
+
+                        <ImageView
+                            android:id="@+id/iv_post_image"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:layout_marginStart="8dp"
+                            android:src="@drawable/ic_baseline_image_24"/>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_marginTop="20dp">
+
+                    <CheckBox
+                        android:id="@+id/cb_send_to_future"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="send it to the future?"
+                        android:textSize="25sp"
+                        android:textColor="@color/black" />
+
+                </LinearLayout>
+
+                <Button
+                    android:id="@+id/btn_select_date"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginStart="30dp"
+                    android:layout_marginEnd="30dp"
+                    android:layout_marginBottom="10dp"
+                    android:backgroundTint="@color/white"
+                    android:text="select date"
+                    android:visibility="visible"
+                    android:textColor="@color/black"
+                    android:textAllCaps="false"/>
+
+                <TextView
+                    android:id="@+id/tv_selected_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="/selected date/"
+                    android:visibility="visible"
+                    android:textColor="@color/black"
+                    android:textSize="20sp"
+                    android:layout_gravity="center"
+                    android:layout_marginBottom="20dp"/>
+
+            </LinearLayout>
+
+        </ScrollView>
+
+        <TextView
+            android:id="@+id/tv_send_post"
+            android:layout_width="70dp"
+            android:layout_height="40dp"
+            android:layout_gravity="end|bottom"
+            android:layout_margin="30dp"
+            android:text="send"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:background="@drawable/send_button_background"
+            android:gravity="center"/>
+
+    </FrameLayout>
+
+</LinearLayout>

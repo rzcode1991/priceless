@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Priceless</string>
+    <string name="forget_pass_txt">Enter Your Email Address To Receive A Link To Reset Your Password.</string>
+    <string name="title_activity_fragment">FragmentActivity</string>
+    <string name="title_me">Me</string>
+    <string name="title_timeline">Timeline</string>
+    <string name="title_notifications">Notifications</string>
+</resources>
