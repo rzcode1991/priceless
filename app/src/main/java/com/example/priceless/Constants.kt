@@ -20,6 +20,8 @@ object Constants {
     const val FirstName = "firstName"
     const val LastName = "lastName"
     const val UserName = "userName"
+    const val UserNames = "usernames"
+    const val Posts = "posts"
 
 
     fun showImageFromStorage(activity: Activity){

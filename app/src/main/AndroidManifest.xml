@@ -15,6 +15,13 @@
         android:theme="@style/Theme.Priceless"
         tools:targetApi="33">
         <activity
+            android:name=".FullScreenPostImageActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity
             android:name=".CreatePostActivity"
             android:exported="false">
             <meta-data

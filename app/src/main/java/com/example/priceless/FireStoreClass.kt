@@ -35,9 +35,43 @@ class FireStoreClass {
             }
     }
 
+
+    fun createPostOnFireStore(activity: CreatePostActivity, post: PostStructure){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .add(post) // Firestore will automatically generate a unique document ID
+            .addOnSuccessListener { documentReference ->
+                // Here, documentReference.id gives you the ID of the newly created post
+                activity.createPostSuccessful()
+            }
+            .addOnFailureListener { e ->
+                activity.hideProgressDialog()
+                Log.e(activity.javaClass.simpleName, "error while creating post on FireStore", e)
+            }
+    }
+
+
+
+    /*
+    fun createPostOnFireStore(activity: CreatePostActivity, post: PostStructure){
+        mFireStore.collection(Constants.Posts)
+            .document(getUserID())
+            .set(post, SetOptions.merge())
+            .addOnSuccessListener {
+                activity.createPostSuccessful()
+            }
+            .addOnFailureListener { e ->
+                activity.hideProgressDialog()
+                Log.e(activity.javaClass.simpleName, "error while creating post on fireStore", e)
+            }
+    }
+
+     */
+
     // maybe we should setOptions.merge()
     private fun createUserName(username: String){
-        mFireStore.collection("usernames")
+        mFireStore.collection(Constants.UserNames)
             .document(username)
             .set(mapOf("taken" to true), SetOptions.merge())
             .addOnSuccessListener {
@@ -49,8 +83,8 @@ class FireStoreClass {
     }
 
 
-    fun updateUserName(oldUsername: String, newUserName: String){
-        mFireStore.collection("usernames")
+    private fun updateUserName(oldUsername: String, newUserName: String){
+        mFireStore.collection(Constants.UserNames)
             .document(oldUsername)
             .delete()
             .addOnSuccessListener {
@@ -63,7 +97,7 @@ class FireStoreClass {
 
 
     fun isUserNameTaken(userName: String, callback: (Boolean) -> Unit) {
-        mFireStore.collection("usernames")
+        mFireStore.collection(Constants.UserNames)
             .document(userName)
             .get()
             .addOnSuccessListener { documentSnapshot ->
@@ -114,6 +148,9 @@ class FireStoreClass {
                     is ProfileActivity -> {
                         activity.successGettingUserInfoFromFireStore(user)
                     }
+                    is CreatePostActivity -> {
+                        activity.successGettingUserInfoFromFireStore(user)
+                    }
                 }
             }
             .addOnFailureListener { e ->
@@ -142,6 +179,34 @@ class FireStoreClass {
                 }
             }
     }
+
+
+    fun getPostsRealtimeListener(activity: Activity, listener: (ArrayList<PostStructure>) -> Unit) {
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    Log.e(activity.javaClass.simpleName, "Error listening to user info", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val posts = ArrayList<PostStructure>()
+
+                    for (document in snapshot.documents) {
+                        val post = document.toObject(PostStructure::class.java)
+                        if (post != null) {
+                            posts.add(post)
+                        }
+                    }
+
+                    listener(posts)
+                }
+            }
+    }
+
+
 
 
     fun updateUserInfoOnFireStore(activity: Activity, userHashMap: HashMap<String, Any>,
@@ -181,12 +246,18 @@ class FireStoreClass {
                     is ProfileActivity -> {
                         activity.uploadImageOnCloudSuccess(Uri.toString())
                     }
+                    is CreatePostActivity -> {
+                        activity.uploadImageOnCloudSuccess(Uri.toString())
+                    }
                 }
             }
         }.addOnFailureListener { e ->
             Log.e(activity.javaClass.simpleName, e.message.toString(), e)
             when(activity){
                 is ProfileActivity -> {
+                    activity.hideProgressDialog()
+                }
+                is CreatePostActivity -> {
                     activity.hideProgressDialog()
                 }
             }

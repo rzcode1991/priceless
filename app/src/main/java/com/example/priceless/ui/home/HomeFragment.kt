@@ -18,10 +18,14 @@ class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private lateinit var fireStoreClass: FireStoreClass
-    private var userProfilePic = ""
-    private var userName = ""
-    private var userFirstAndLastName = ""
-    private var userId = ""
+    private var mProfilePicture: String = ""
+    private var mUserId: String = ""
+    private var mUserName: String = ""
+    private var mPostText: String = ""
+    private var mPostImage: String = ""
+    private var mTimeCreated: String = ""
+    private var mVisibility: Boolean = true
+    private var mTimeToShare: String = "now"
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -62,6 +66,58 @@ class HomeFragment : Fragment() {
 
         fireStoreClass = FireStoreClass()
 
+        fireStoreClass.getPostsRealtimeListener(requireActivity()) { posts ->
+            for (post in posts) {
+                fireStoreClass.getUserInfoRealtimeListener(requireActivity()) { user ->
+                    post.profilePicture = user.image
+                    post.userName = user.userName
+
+                    // Check if the fragment is attached to an activity and if it is still in the resumed state
+                    if (isAdded && isVisible) {
+                        val adapter = context?.let {
+                            RecyclerviewAdapter(it, posts)
+                        }
+                        val layoutManager = LinearLayoutManager(context)
+
+                        // Check if the RecyclerView is still attached to the view hierarchy
+                        if (!isDetached) {
+                            binding.recyclerView.adapter = adapter
+                            binding.recyclerView.layoutManager = layoutManager
+                        }
+                    }
+                }
+            }
+        }
+
+
+
+
+        /*
+        fireStoreClass.getPostsRealtimeListener(requireActivity()) { posts ->
+
+            for (post in posts){
+                mProfilePicture = post.profilePicture
+                mUserId = post.userId
+                mUserName = post.userName
+                mPostText = post.postText
+                mPostImage = post.postImage
+                mTimeCreated = post.timeCreated
+                mVisibility = post.visibility
+                mTimeToShare = post.timeToShare
+            }
+
+            //val postsList = generatePostsList()
+            val adapter = context?.let { RecyclerviewAdapter(it, posts) }
+            val layoutManager = LinearLayoutManager(context)
+            binding.recyclerView.adapter = adapter
+            binding.recyclerView.layoutManager = layoutManager
+
+        }
+
+
+         */
+
+        /*
         fireStoreClass.getUserInfoRealtimeListener(requireActivity()) { user ->
             userName = user.userName
             userFirstAndLastName = "${user.firstName} ${user.lastName}"
@@ -74,17 +130,20 @@ class HomeFragment : Fragment() {
             binding.recyclerView.adapter = adapter
             binding.recyclerView.layoutManager = layoutManager
         }
+
+         */
+
+
+
     }
 
-    private fun generateDummyList(): ArrayList<PostStructure>{
-        val dummyList = ArrayList<PostStructure>()
-        for (i in 0..50){
-            val examplePostItem = PostStructure(userProfilePic, userId, userName, userFirstAndLastName,
-                "${System.currentTimeMillis()}",
-                true, "already shared", i)
-            dummyList.add(examplePostItem)
-        }
-        return dummyList
+
+    private fun generatePostsList(): ArrayList<PostStructure>{
+        val postsList = ArrayList<PostStructure>()
+        val newPost = PostStructure(mProfilePicture, mUserId, mUserName, mPostText, mPostImage,
+            mTimeCreated, mVisibility, mTimeToShare)
+        postsList.add(newPost)
+        return postsList
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

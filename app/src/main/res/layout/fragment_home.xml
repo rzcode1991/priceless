@@ -22,7 +22,6 @@
             android:src="@drawable/ic_baseline_create_24"
             android:background="@drawable/create_background"
             android:layout_gravity="end|bottom"
-            android:layout_margin="30dp"
-            android:contentDescription="create_post_ib" />
+            android:layout_margin="30dp"/>
 
 </FrameLayout>
