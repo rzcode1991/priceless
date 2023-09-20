@@ -29,6 +29,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private lateinit var userInfo: User
     private var imageNameUrl: String = ""
     private var imageURI: Uri? = null
+    private lateinit var newPost: PostStructure
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +44,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         ivPostImage = findViewById(R.id.iv_post_image_create_post)
         tvSendPost = findViewById(R.id.tv_send_post_create_post)
 
+        showProgressDialog()
         FireStoreClass().getUserInfoFromFireStore(this)
 
         tvSendPost.setOnClickListener(this@CreatePostActivity)
@@ -62,13 +64,17 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         val timeCreated = System.currentTimeMillis().toString()
         val visibility = true
         val timeToShare = "now"
-        val newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
-            timeCreated, visibility, timeToShare)
+        val postID = ""
+        newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
+            timeCreated, visibility, timeToShare, postID)
         FireStoreClass().createPostOnFireStore(this, newPost)
     }
 
 
     fun createPostSuccessful(){
+        // updating sortedPosts
+        val sortedPosts = Constants.sortedPosts
+        sortedPosts[newPost.timeCreated] = newPost
         hideProgressDialog()
         Toast.makeText(this, "your post was sent successfully", Toast.LENGTH_LONG).show()
         val intent = Intent(this@CreatePostActivity, FragmentActivity::class.java)
@@ -77,6 +83,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     }
 
     fun successGettingUserInfoFromFireStore(user: User){
+        hideProgressDialog()
         userInfo = user
         setUserInfo()
     }
@@ -108,7 +115,8 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                     if (validateUserInput()){
                         showProgressDialog()
                         if (imageURI != null) {
-                            FireStoreClass().uploadImageToCloudStorage(this, imageURI!!)
+                            FireStoreClass().uploadImageToCloudStorage(this, imageURI!!,
+                                "post_image")
                         } else {
                             createPost()
                         }

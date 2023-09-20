@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.MediaStore
 import android.webkit.MimeTypeMap
+import java.util.*
 
 object Constants {
     const val USERS: String = "users"
@@ -23,6 +24,8 @@ object Constants {
     const val UserNames = "usernames"
     const val Posts = "posts"
 
+
+    val sortedPosts = TreeMap<String, PostStructure>()
 
     fun showImageFromStorage(activity: Activity){
         val imageIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)

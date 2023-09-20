@@ -49,7 +49,7 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         toolbarProfile = findViewById(R.id.toolbar_profile)
         btnLogOut = findViewById(R.id.btn_LogOut_profile)
 
-
+        showProgressDialog()
         FireStoreClass().getUserInfoFromFireStore(this)
 
         ivImageProfile.setOnClickListener(this@ProfileActivity)
@@ -59,6 +59,7 @@ class ProfileActivity : BaseActivity(), OnClickListener {
     }
 
     fun successGettingUserInfoFromFireStore(user: User){
+        hideProgressDialog()
         userInfo = user
         setUserInfo()
     }
@@ -71,7 +72,9 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         etLastName.setText(userInfo.lastName)
         etEmail.isEnabled = false
         etEmail.setText(userInfo.email)
-        etPhoneNumber.setText(userInfo.phoneNumber.toString())
+        if (userInfo.phoneNumber != 0L){
+            etPhoneNumber.setText(userInfo.phoneNumber.toString())
+        }
         GlideLoader(this).loadImageUri(userInfo.image, ivImageProfile)
     }
 
@@ -94,7 +97,8 @@ class ProfileActivity : BaseActivity(), OnClickListener {
                         if (isValid) {
                             showProgressDialog()
                             if (imageURI != null) {
-                                FireStoreClass().uploadImageToCloudStorage(this, imageURI!!)
+                                FireStoreClass().uploadImageToCloudStorage(this, imageURI!!,
+                                    "profile_image")
                             } else {
                                 updateUserInfo()
                             }
@@ -131,7 +135,6 @@ class ProfileActivity : BaseActivity(), OnClickListener {
                 if (data != null) {
                     try {
                         imageURI = data.data!!
-                        //ivImageProfile.setImageURI(imageURI)
                         if (imageURI != null){
                             GlideLoader(this).loadImageUri(imageURI!!, ivImageProfile)
                         }
@@ -231,6 +234,9 @@ class ProfileActivity : BaseActivity(), OnClickListener {
     }
 
     fun uploadImageOnCloudSuccess(imageUrl: String){
+        if (userInfo.image.isNotEmpty()){
+            FireStoreClass().deleteImageFromCloudStorage(userInfo.image)
+        }
         imageNameUrl = imageUrl
         updateUserInfo()
     }

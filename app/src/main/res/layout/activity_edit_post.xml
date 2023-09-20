@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="8dp"
-    tools:context=".CreatePostActivity">
+    tools:context=".EditPostActivity">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
         android:layout_marginBottom="8dp">
 
         <ImageView
-            android:id="@+id/iv_profile_pic_create_post"
+            android:id="@+id/iv_profile_pic_edit_post"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_gravity="center"
@@ -24,7 +24,7 @@
             android:src="@drawable/ic_baseline_account_circle_24"/>
 
         <TextView
-            android:id="@+id/tv_user_name_create_post"
+            android:id="@+id/tv_user_name_edit_post"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="userName"
@@ -33,11 +33,6 @@
             android:layout_gravity="center"/>
 
     </LinearLayout>
-
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="8dp">
 
         <ScrollView
             android:layout_width="match_parent"
@@ -62,7 +57,7 @@
                         android:minHeight="150dp">
 
                         <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_main_post_text_create_post"
+                            android:id="@+id/et_post_text_edit_post"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:minHeight="150dp"
@@ -76,39 +71,42 @@
 
                     </ScrollView>
 
-                        <ImageView
-                            android:id="@+id/iv_post_image_create_post"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:layout_height="120dp"
-                            android:layout_marginStart="8dp"
-                            android:src="@drawable/ic_baseline_image_24"/>
+                    <ImageView
+                        android:id="@+id/iv_post_image_edit_post"
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="120dp"
+                        android:layout_marginStart="8dp"
+                        android:src="@drawable/ic_baseline_image_24"/>
 
                 </LinearLayout>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/tv_time_created_edit_post"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="20dp">
-
-                    <CheckBox
-                        android:id="@+id/cb_send_to_future"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="send it to the future?"
-                        android:textSize="25sp"
-                        android:textColor="@color/black" />
-
-                </LinearLayout>
+                    android:text="time created"
+                    android:layout_gravity="start"
+                    android:layout_marginTop="8dp"
+                    android:textSize="12sp"
+                    android:textColor="#5E5A5A"/>
 
                 <Button
-                    android:id="@+id/btn_select_date"
+                    android:id="@+id/btn_edit_and_update_post"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginStart="30dp"
+                    android:layout_marginEnd="30dp"
+                    android:layout_marginBottom="10dp"
+                    android:backgroundTint="@color/white"
+                    android:text="Edit Post"
+                    android:visibility="visible"
+                    android:textColor="@color/black"
+                    android:textAllCaps="false"/>
+
+                <Button
+                    android:id="@+id/btn_cancel_editing_post"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
@@ -116,38 +114,27 @@
                     android:layout_marginEnd="30dp"
                     android:layout_marginBottom="10dp"
                     android:backgroundTint="@color/white"
-                    android:text="select date"
-                    android:visibility="visible"
+                    android:text="Cancel"
+                    android:visibility="invisible"
                     android:textColor="@color/black"
                     android:textAllCaps="false"/>
 
-                <TextView
-                    android:id="@+id/tv_selected_date"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="/selected date/"
-                    android:visibility="visible"
-                    android:textColor="@color/black"
-                    android:textSize="20sp"
-                    android:layout_gravity="center"
-                    android:layout_marginBottom="20dp"/>
+                <Button
+                    android:id="@+id/btn_delete_post"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginStart="30dp"
+                    android:layout_marginEnd="30dp"
+                    android:layout_marginBottom="10dp"
+                    android:backgroundTint="@color/white"
+                    android:text="Delete Post"
+                    android:textColor="@color/red"
+                    android:visibility="invisible"
+                    android:textAllCaps="false"/>
 
             </LinearLayout>
 
         </ScrollView>
-
-        <TextView
-            android:id="@+id/tv_send_post_create_post"
-            android:layout_width="70dp"
-            android:layout_height="40dp"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="30dp"
-            android:text="send"
-            android:textColor="@color/black"
-            android:textSize="18sp"
-            android:background="@drawable/send_button_background"
-            android:gravity="center"/>
-
-    </FrameLayout>
 
 </LinearLayout>

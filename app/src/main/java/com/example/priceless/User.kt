@@ -10,6 +10,6 @@ data class User(var id: String = "",
                 var lastName: String = "",
                 var email: String = "",
                 var image: String = "",
-                var phoneNumber: Long = 0,
+                var phoneNumber: Long = 0L,
                 var profileCompleted: Int = 0
 ): Parcelable

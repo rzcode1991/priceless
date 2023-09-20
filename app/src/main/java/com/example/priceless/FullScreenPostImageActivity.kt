@@ -9,6 +9,8 @@ class FullScreenPostImageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_screen_post_image)
 
+        supportActionBar?.hide()
+
         if (intent.hasExtra("post_image")){
             val postImage = intent.getStringExtra("post_image")
             val ivFullScreenPostImage: ImageView = findViewById(R.id.iv_full_screen_post_image)

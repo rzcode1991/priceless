@@ -10,7 +10,7 @@ import android.widget.Toolbar
 import androidx.appcompat.app.ActionBar.DISPLAY_SHOW_TITLE
 import androidx.appcompat.app.AppCompatActivity
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : BaseActivity() {
 
     private lateinit var tvMain: TextView
     private lateinit var userInfo: User
@@ -24,12 +24,14 @@ class MainActivity : AppCompatActivity() {
         toolbarMain = findViewById(R.id.toolbar_main)
         setSupportActionBar(toolbarMain)
 
+        showProgressDialog()
         FireStoreClass().getUserInfoFromFireStore(this)
 
     }
 
 
     fun successGettingUserInfoFromFireStore(user: User){
+        hideProgressDialog()
         userInfo = user
         tvMain.text = "first name: ${userInfo.firstName} last name: ${userInfo.lastName} email: ${userInfo.email}"
     }

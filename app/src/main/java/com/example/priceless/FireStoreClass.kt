@@ -36,13 +36,24 @@ class FireStoreClass {
     }
 
 
-    fun createPostOnFireStore(activity: CreatePostActivity, post: PostStructure){
-        mFireStore.collection(Constants.USERS)
+    fun createPostOnFireStore(activity: CreatePostActivity, post: PostStructure) {
+        val postCollection = mFireStore.collection(Constants.USERS)
             .document(getUserID())
             .collection(Constants.Posts)
-            .add(post) // Firestore will automatically generate a unique document ID
+
+        // Add the post to FireStore without an ID (FireStore will generate one)
+        postCollection.add(post)
             .addOnSuccessListener { documentReference ->
                 // Here, documentReference.id gives you the ID of the newly created post
+                val postID = documentReference.id
+
+                postCollection.document(postID).update("postID", postID)
+
+                // Update the post with the generated postID
+                //val postWithID = post.copy(postID = postID) // Assuming you have a postID field in PostStructure
+                //postCollection.document(postID)
+                //    .set(postWithID) // maybe we should use update instead of set
+
                 activity.createPostSuccessful()
             }
             .addOnFailureListener { e ->
@@ -53,27 +64,60 @@ class FireStoreClass {
 
 
 
-    /*
-    fun createPostOnFireStore(activity: CreatePostActivity, post: PostStructure){
-        mFireStore.collection(Constants.Posts)
+    fun updatePostOnFireStore(activity: Activity, postHashMap: HashMap<String, Any>, postID: String){
+        mFireStore.collection(Constants.USERS)
             .document(getUserID())
-            .set(post, SetOptions.merge())
+            .collection(Constants.Posts)
+            .document(postID)
+            .update(postHashMap)
             .addOnSuccessListener {
-                activity.createPostSuccessful()
+                when(activity){
+                    is EditPostActivity -> {
+                        activity.updatePostOnFireStoreSuccess()
+                    }
+                }
             }
             .addOnFailureListener { e ->
-                activity.hideProgressDialog()
-                Log.e(activity.javaClass.simpleName, "error while creating post on fireStore", e)
+                when(activity){
+                    is EditPostActivity -> {
+                        activity.hideProgressDialog()
+                    }
+                }
+                Log.e(activity.javaClass.simpleName, "update post on fireStore failed", e)
             }
     }
 
-     */
+
+    fun deletePostOnFireStore(activity: Activity, postID: String, postImage: String){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .delete()
+            .addOnSuccessListener {
+                deleteImageFromCloudStorage(postImage)
+                when(activity){
+                    is EditPostActivity -> {
+                        activity.deletePostOnFireStoreSuccess()
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                when(activity){
+                    is EditPostActivity -> {
+                        activity.hideProgressDialog()
+                    }
+                }
+                Log.e(activity.javaClass.simpleName, "delete post on fireStore failed", e)
+            }
+    }
+
 
     // maybe we should setOptions.merge()
     private fun createUserName(username: String){
         mFireStore.collection(Constants.UserNames)
-            .document(username)
-            .set(mapOf("taken" to true), SetOptions.merge())
+            .document(getUserID())
+            .set(mapOf("username" to username), SetOptions.merge())
             .addOnSuccessListener {
                 // Username added successfully
             }
@@ -83,12 +127,12 @@ class FireStoreClass {
     }
 
 
-    private fun updateUserName(oldUsername: String, newUserName: String){
+    private fun updateUserName(newUserName: String){
         mFireStore.collection(Constants.UserNames)
-            .document(oldUsername)
-            .delete()
+            .document(getUserID())
+            .update("username", newUserName)
             .addOnSuccessListener {
-                createUserName(newUserName)
+                // update
             }
             .addOnFailureListener { e ->
                 Log.e("updateUserName error", "error while updating userName", e)
@@ -96,6 +140,29 @@ class FireStoreClass {
     }
 
 
+    fun isUserNameTaken(userName: String, callback: (Boolean) -> Unit) {
+        mFireStore.collection(Constants.UserNames)
+            .whereEqualTo("username", userName)
+            .get()
+            .addOnSuccessListener { querySnapshot ->
+                if (!querySnapshot.isEmpty) {
+                    // The username is taken by another user
+                    callback(true)
+                } else {
+                    // Username is available
+                    callback(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("isUserNameTaken error", "error while checking if userName is taken or not", e)
+                callback(false)
+            }
+    }
+
+
+
+
+    /*
     fun isUserNameTaken(userName: String, callback: (Boolean) -> Unit) {
         mFireStore.collection(Constants.UserNames)
             .document(userName)
@@ -114,6 +181,8 @@ class FireStoreClass {
                 callback(false)
             }
     }
+
+     */
 
 
     fun getUserID(): String {
@@ -156,6 +225,15 @@ class FireStoreClass {
             .addOnFailureListener { e ->
                 when(activity){
                     is LogIn -> {
+                        activity.hideProgressDialog()
+                    }
+                    is MainActivity -> {
+                        activity.hideProgressDialog()
+                    }
+                    is ProfileActivity -> {
+                        activity.hideProgressDialog()
+                    }
+                    is CreatePostActivity -> {
                         activity.hideProgressDialog()
                     }
                 }
@@ -218,7 +296,7 @@ class FireStoreClass {
                 when(activity){
                     is ProfileActivity -> {
                         if (oldUserName != newUserName){
-                            updateUserName(oldUserName, newUserName)
+                            updateUserName(newUserName)
                         }
                         activity.updateUserInfoOnFireStoreSuccess()
                     }
@@ -234,9 +312,9 @@ class FireStoreClass {
             }
     }
 
-    fun uploadImageToCloudStorage(activity: Activity, imageUri: Uri){
+    fun uploadImageToCloudStorage(activity: Activity, imageUri: Uri, pathString: String){
 
-        val sREF: StorageReference = Firebase.storage.reference.child(Constants.User_Profile_Image +
+        val sREF: StorageReference = Firebase.storage.reference.child(pathString +
                 System.currentTimeMillis() + "." + Constants.getExtensionFromFile(activity, imageUri))
         sREF.putFile(imageUri).addOnSuccessListener { TaskSnapshot ->
             Log.i("firebase image Url", TaskSnapshot.metadata!!.reference!!.downloadUrl.toString())
@@ -247,6 +325,9 @@ class FireStoreClass {
                         activity.uploadImageOnCloudSuccess(Uri.toString())
                     }
                     is CreatePostActivity -> {
+                        activity.uploadImageOnCloudSuccess(Uri.toString())
+                    }
+                    is EditPostActivity -> {
                         activity.uploadImageOnCloudSuccess(Uri.toString())
                     }
                 }
@@ -260,8 +341,29 @@ class FireStoreClass {
                 is CreatePostActivity -> {
                     activity.hideProgressDialog()
                 }
+                is EditPostActivity -> {
+                    activity.hideProgressDialog()
+                }
             }
         }
     }
+
+    fun deleteImageFromCloudStorage(imageUrl: String) {
+        val storage = Firebase.storage
+        val storageRef = storage.getReferenceFromUrl(imageUrl)
+
+        storageRef.delete()
+            .addOnSuccessListener {
+                // File deleted successfully
+                Log.i("Firebase Storage", "Image deleted successfully")
+                // You can perform additional actions here if needed
+            }
+            .addOnFailureListener { e ->
+                // An error occurred while deleting the file
+                Log.e("Firebase Storage", "Error deleting image: ${e.message}", e)
+                // Handle the error as needed
+            }
+    }
+
 
 }

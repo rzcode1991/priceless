@@ -27,9 +27,10 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
         if (currentItemPost.profilePicture.isNotEmpty()){
             GlideLoader(context).loadImageUri(currentItemPost.profilePicture, holder.profilePic)
         }else{
-            GlideLoader(context).loadImageUri(R.drawable.ic_baseline_account_circle_24, holder.profilePic)
+            holder.profilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
         }
         if (currentItemPost.postImage.isNotEmpty()){
+            holder.postImage.visibility = View.VISIBLE
             GlideLoader(context).loadImageUri(currentItemPost.postImage, holder.postImage)
             holder.postImage.setOnClickListener {
                 val intent = Intent(context, FullScreenPostImageActivity::class.java)
@@ -38,14 +39,19 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
             }
         }else{
             holder.postImage.visibility = View.GONE
-            holder.postText.layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT
-            //GlideLoader(context).loadImageUri(R.drawable.white_image_background, holder.postImage)
+            //holder.postText.layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT
+            holder.postImage.setImageResource(R.drawable.white_image_background)
         }
         holder.postText.text = currentItemPost.postText
         holder.timeCreatedText.text = currentItemPost.timeCreated
         // TODO go to a user profile page
         holder.profilePic.setOnClickListener {
             Toast.makeText(context, "you clicked on profile pic", Toast.LENGTH_SHORT).show()
+        }
+        holder.viewMore.setOnClickListener {
+            val intent = Intent(context, EditPostActivity::class.java)
+            intent.putExtra("entire_post", currentItemPost)
+            context.startActivity(intent)
         }
         holder.userName.text = currentItemPost.userName
     }
@@ -56,10 +62,11 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
 
     class ExampleViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val profilePic: ImageView = itemView.findViewById(R.id.iv_profile_post_item)
-        val userName: TextView = itemView.findViewById(R.id.tv_user_name)
+        val userName: TextView = itemView.findViewById(R.id.tv_user_name_post_item)
         val postText: TextView = itemView.findViewById(R.id.tv_post_content_post_item)
         val postImage: ImageView = itemView.findViewById(R.id.iv_post_image_post_item)
         val timeCreatedText: TextView = itemView.findViewById(R.id.tv_time_created_post_item)
+        val viewMore: ImageView = itemView.findViewById(R.id.iv_tap_for_more_post_item)
     }
 
 }
