@@ -15,7 +15,13 @@ import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.HashMap
 
 class EditPostActivity : BaseActivity(), OnClickListener {
 
@@ -31,10 +37,16 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     private var editOrUpdateSituation = "edit"
     private var imageURI: Uri? = null
     private var newImageNameUrl: String = ""
-    private var newTimeCreated: String = ""
+    private var newTimeCreatedMillis: String = ""
+    private var newTimeCreatedToShow: String = ""
     private lateinit var newPost: PostStructure
     private var newPostText: String = ""
     private var newPostImage: String = ""
+    private var dateNow: String = ""
+    private var millisNow: String = ""
+    private var getTime: GetTime? = null
+    private var dateAndTimePair: Pair<String?, String?>? = null
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +60,8 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         btnEditAndUpdatePost = findViewById(R.id.btn_edit_and_update_post)
         btnCancelEditing = findViewById(R.id.btn_cancel_editing_post)
         btnDeletePost = findViewById(R.id.btn_delete_post)
+
+        getTime = GetTime()
 
         if (intent.hasExtra("entire_post")){
             post = intent.getParcelableExtra("entire_post")!!
@@ -76,7 +90,12 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         }else{
             ivPostImage.setImageResource(R.drawable.ic_baseline_image_24)
         }
-        tvTimeCreated.text = post.timeCreated
+        if (post.timeCreatedToShow.isNotEmpty()){
+            tvTimeCreated.text = "created at ${post.timeCreatedToShow}"
+        }else{
+            tvTimeCreated.text = "err getting time online"
+        }
+
     }
 
     override fun onClick(v: View?) {
@@ -84,6 +103,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             when(v.id){
                 R.id.btn_edit_and_update_post -> {
                     if (editOrUpdateSituation == "edit"){
+                        Toast.makeText(this, "now you can edit the text or change the image", Toast.LENGTH_LONG).show()
                         btnEditAndUpdatePost.text = "Update"
                         btnCancelEditing.visibility = VISIBLE
                         btnDeletePost.visibility = VISIBLE
@@ -107,7 +127,13 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                                 FireStoreClass().uploadImageToCloudStorage(this, imageURI!!,
                                     "post_image")
                             }else{
-                                updatePost()
+                                coroutineScope.launch {
+                                    try {
+                                        updatePost()
+                                    } catch (e: Exception) {
+                                        Log.d("err calling createPost", e.message.toString())
+                                    }
+                                }
                             }
                         }
                     }
@@ -132,8 +158,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                         builder.setIcon(R.drawable.ic_round_warning_24)
                         builder.setPositiveButton("Yes") { dialog, _ ->
                             showProgressDialog()
-                            FireStoreClass().deletePostOnFireStore(this@EditPostActivity,
-                                post.postID, post.postImage)
+                            FireStoreClass().deletePostOnFireStore(this@EditPostActivity, post.postID)
                             dialog.dismiss()
                         }
                         builder.setNeutralButton("Cancel") {dialog, _ ->
@@ -199,38 +224,64 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             FireStoreClass().deleteImageFromCloudStorage(post.postImage)
         }
         newImageNameUrl = newImageUrl
-        updatePost()
+        coroutineScope.launch {
+            try {
+                updatePost()
+            } catch (e: Exception) {
+                Log.d("err calling createPost", e.message.toString())
+            }
+        }
     }
 
 
-    private fun updatePost(){
-        val postHashMap = HashMap<String, Any>()
-        val postID = post.postID
-        if (post.postText != etPostText.text.toString()){
-            newPostText = etPostText.text.toString()
-            postHashMap["postText"] = newPostText
+    private suspend fun updatePost(){
+        getTimeNow()
+        if (millisNow.isEmpty() || dateNow.isEmpty()){
+            showErrorSnackBar("error getting time online, try again", true)
+            hideProgressDialog()
         }else{
-            // just for adjusting the sortedPosts,
-            newPostText = post.postText
+            val postHashMap = HashMap<String, Any>()
+            val postID = post.postID
+            if (post.postText != etPostText.text.toString()){
+                newPostText = etPostText.text.toString()
+                postHashMap["postText"] = newPostText
+            }else{
+                // just for adjusting the sortedPosts,
+                newPostText = post.postText
+            }
+            if (newImageNameUrl.isNotEmpty()){
+                newPostImage = newImageNameUrl
+                postHashMap["postImage"] = newPostImage
+            }else{
+                newPostImage = post.postImage
+            }
+            newTimeCreatedMillis = millisNow
+            newTimeCreatedToShow = dateNow
+            postHashMap["timeCreatedMillis"] = newTimeCreatedMillis
+            postHashMap["timeCreatedToShow"] = newTimeCreatedToShow
+            postHashMap["edited"] = true
+            FireStoreClass().updatePostOnFireStore(this@EditPostActivity, postHashMap, postID)
         }
-        if (newImageNameUrl.isNotEmpty()){
-            newPostImage = newImageNameUrl
-            postHashMap["postImage"] = newPostImage
-        }else{
-            newPostImage = post.postImage
+    }
+
+
+    private suspend fun getTimeNow(){
+        dateAndTimePair = getTime?.getCurrentTimeAndDate()
+        if (dateAndTimePair != null){
+            if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
+                dateNow = dateAndTimePair!!.first!!
+                millisNow = dateAndTimePair!!.second!!
+            }
         }
-        newTimeCreated = System.currentTimeMillis().toString()
-        postHashMap["timeCreated"] = newTimeCreated
-        postHashMap["edited"] = true
-        FireStoreClass().updatePostOnFireStore(this@EditPostActivity, postHashMap, postID)
     }
 
     fun updatePostOnFireStoreSuccess(){
         val sortedPosts = Constants.sortedPosts
-        sortedPosts.remove(post.timeCreated)
+        sortedPosts.remove(post.timeCreatedMillis)
+        // assuming that only visible posts are editable
         newPost = PostStructure(post.profilePicture, post.userId, post.userName, newPostText,
-            newPostImage, newTimeCreated, true, "now", post.postID, true)
-        sortedPosts[newTimeCreated] = newPost
+            newPostImage, newTimeCreatedMillis, newTimeCreatedToShow, "now", true, post.postID, true)
+        sortedPosts[newTimeCreatedMillis] = newPost
         hideProgressDialog()
         Toast.makeText(this, "post updated successfully", Toast.LENGTH_LONG).show()
         val intent = Intent(this@EditPostActivity, FragmentActivity::class.java)
@@ -240,10 +291,13 @@ class EditPostActivity : BaseActivity(), OnClickListener {
 
 
     fun deletePostOnFireStoreSuccess(){
+        if (post.postImage.isNotEmpty()){
+            FireStoreClass().deleteImageFromCloudStorage(post.postImage)
+        }
         val sortedPosts = Constants.sortedPosts
-        sortedPosts.remove(post.timeCreated)
+        sortedPosts.remove(post.timeCreatedMillis)
         hideProgressDialog()
-        Toast.makeText(this, "post deleted", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Post Deleted", Toast.LENGTH_LONG).show()
         val intent = Intent(this@EditPostActivity, FragmentActivity::class.java)
         startActivity(intent)
         finish()

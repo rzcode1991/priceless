@@ -117,7 +117,7 @@
                     android:layout_marginBottom="10dp"
                     android:backgroundTint="@color/white"
                     android:text="select date"
-                    android:visibility="visible"
+                    android:visibility="invisible"
                     android:textColor="@color/black"
                     android:textAllCaps="false"/>
 
@@ -126,7 +126,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="/selected date/"
-                    android:visibility="visible"
+                    android:visibility="invisible"
                     android:textColor="@color/black"
                     android:textSize="20sp"
                     android:layout_gravity="center"

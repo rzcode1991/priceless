@@ -13,6 +13,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.priceless.PostStructure
 import com.example.priceless.R
 import com.example.priceless.ui.home.HomeFragment
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<PostStructure>):
     RecyclerView.Adapter<RecyclerviewAdapter.ExampleViewHolder>() {
@@ -43,7 +46,11 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
             holder.postImage.setImageResource(R.drawable.white_image_background)
         }
         holder.postText.text = currentItemPost.postText
-        holder.timeCreatedText.text = currentItemPost.timeCreated
+        if (currentItemPost.timeCreatedToShow.isNotEmpty()){
+            holder.timeCreatedText.text = "created at ${currentItemPost.timeCreatedToShow}"
+        }else{
+            holder.timeCreatedText.text = "err getting time online"
+        }
         // TODO go to a user profile page
         holder.profilePic.setOnClickListener {
             Toast.makeText(context, "you clicked on profile pic", Toast.LENGTH_SHORT).show()

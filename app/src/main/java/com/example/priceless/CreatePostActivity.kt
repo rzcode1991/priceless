@@ -1,10 +1,11 @@
 package com.example.priceless
 
 import android.app.Activity
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -14,7 +15,12 @@ import android.view.View.VISIBLE
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.*
 import java.io.IOException
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.*
 
 class CreatePostActivity : BaseActivity(), OnClickListener {
 
@@ -30,6 +36,14 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private var imageNameUrl: String = ""
     private var imageURI: Uri? = null
     private lateinit var newPost: PostStructure
+    private var finalTimeInMillis: String = ""
+    private var formattedDateTime: String = ""
+    private var dateNow: String = ""
+    private var millisNow: String = ""
+    private var getTime: GetTime? = null
+    private var dateAndTimePair: Pair<String?, String?>? = null
+    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,37 +58,57 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         ivPostImage = findViewById(R.id.iv_post_image_create_post)
         tvSendPost = findViewById(R.id.tv_send_post_create_post)
 
+        getTime = GetTime()
+
         showProgressDialog()
         FireStoreClass().getUserInfoFromFireStore(this)
 
         tvSendPost.setOnClickListener(this@CreatePostActivity)
         ivPostImage.setOnClickListener(this@CreatePostActivity)
 
+        cbSendToFuture.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                btnSelectDate.visibility = VISIBLE
+                btnSelectDate.setOnClickListener(this@CreatePostActivity)
+            } else {
+                btnSelectDate.visibility = View.INVISIBLE
+                tvSelectedDate.visibility = View.INVISIBLE
+                finalTimeInMillis = ""
+            }
+        }
 
 
     }
 
 
-    private fun createPost(){
-        val profilePicture = userInfo.image
-        val userId = userInfo.id
-        val userName = userInfo.userName
-        val postText = etPostText.text.toString()
-        val postImage = imageNameUrl
-        val timeCreated = System.currentTimeMillis().toString()
-        val visibility = true
-        val timeToShare = "now"
-        val postID = ""
-        newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
-            timeCreated, visibility, timeToShare, postID)
-        FireStoreClass().createPostOnFireStore(this, newPost)
+    private suspend fun createPost() {
+        getTimeNow()
+        if (millisNow.isEmpty() || dateNow.isEmpty()){
+            showErrorSnackBar("error getting time online, try again", true)
+            hideProgressDialog()
+        }else{
+            val profilePicture = userInfo.image
+            val userId = userInfo.id
+            val userName = userInfo.userName
+            val postText = etPostText.text.toString()
+            val postImage = imageNameUrl
+            val timeCreatedMillis = millisNow
+            val timeCreatedToShow = dateNow
+            val timeToShare = finalTimeInMillis.ifEmpty { "now" }
+            val visibility = timeToShare == "now"
+            val postID = ""
+            val edited = false
+            newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
+                timeCreatedMillis, timeCreatedToShow, timeToShare, visibility, postID, edited)
+            FireStoreClass().createPostOnFireStore(this, newPost)
+        }
     }
 
 
     fun createPostSuccessful(){
         // updating sortedPosts
         val sortedPosts = Constants.sortedPosts
-        sortedPosts[newPost.timeCreated] = newPost
+        sortedPosts[newPost.timeCreatedMillis] = newPost
         hideProgressDialog()
         Toast.makeText(this, "your post was sent successfully", Toast.LENGTH_LONG).show()
         val intent = Intent(this@CreatePostActivity, FragmentActivity::class.java)
@@ -111,14 +145,35 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                             Constants.PermissionExternalStorageCode)
                     }
                 }
+                R.id.btn_select_date -> {
+                    if (btnSelectDate.visibility == VISIBLE){
+                        coroutineScope.launch {
+                            try {
+                                showDatePickerDialog()
+                            } catch (e: Exception) {
+                                Log.d("err calling createPost", e.message.toString())
+                            }
+                        }
+                    }
+                }
                 R.id.tv_send_post_create_post -> {
                     if (validateUserInput()){
-                        showProgressDialog()
-                        if (imageURI != null) {
-                            FireStoreClass().uploadImageToCloudStorage(this, imageURI!!,
-                                "post_image")
-                        } else {
-                            createPost()
+                        if (cbSendToFuture.isChecked && finalTimeInMillis.isEmpty()){
+                            showErrorSnackBar("please select a date or uncheck the box", true)
+                        }else{
+                            showProgressDialog()
+                            if (imageURI != null) {
+                                FireStoreClass().uploadImageToCloudStorage(this, imageURI!!,
+                                    "post_image")
+                            }else{
+                                coroutineScope.launch {
+                                    try {
+                                        createPost()
+                                    } catch (e: Exception) {
+                                        Log.d("err calling createPost", e.message.toString())
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -174,8 +229,111 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
 
     fun uploadImageOnCloudSuccess(imageUrl: String){
         imageNameUrl = imageUrl
-        createPost()
+        coroutineScope.launch {
+            try {
+                createPost()
+            } catch (e: Exception) {
+                Log.d("err calling createPost", e.message.toString())
+            }
+        }
     }
+
+
+    private suspend fun getTimeNow(){
+        dateAndTimePair = getTime?.getCurrentTimeAndDate()
+        if (dateAndTimePair != null){
+            if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
+                dateNow = dateAndTimePair!!.first!!
+                millisNow = dateAndTimePair!!.second!!
+            }
+        }
+    }
+
+
+    private suspend fun showDatePickerDialog() {
+        val calendar = Calendar.getInstance()
+        showProgressDialog()
+        getTimeNow()
+        hideProgressDialog()
+        if (dateNow.isEmpty() || millisNow.isEmpty()){
+            showErrorSnackBar("error getting time online, try again", true)
+        }else{
+            val onlineTime = dateNow
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+
+            try {
+                val onlineDate = sdf.parse(onlineTime)
+                if (onlineDate != null) {
+                    calendar.time = onlineDate
+                }
+            } catch (e: ParseException) {
+                // Handle the parsing exception, e.g., log it or show an error message
+                showErrorSnackBar("Error parsing online time", true)
+            }
+
+            val year = calendar.get(Calendar.YEAR)
+            val month = calendar.get(Calendar.MONTH)
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
+            //
+            val hour = calendar.get(Calendar.HOUR_OF_DAY)
+            val minute = calendar.get(Calendar.MINUTE)
+
+            val datePickerDialog = DatePickerDialog(
+                this, { _, selectedYear, selectedMonth, selectedDayOfMonth ->
+                    val selectedDate = Calendar.getInstance()
+                    selectedDate.set(selectedYear, selectedMonth, selectedDayOfMonth)
+                    //
+                    selectedDate.set(Calendar.HOUR_OF_DAY, hour)
+                    selectedDate.set(Calendar.MINUTE, minute)
+                    Log.d("compare", "${selectedDate.timeInMillis/1000} is it < ${millisNow.toLong()}")
+                    if (selectedDate.timeInMillis/1000+100 < millisNow.toLong()) {
+                        showErrorSnackBar("Please select a future date", true)
+                    } else {
+                        showTimePickerDialog(selectedDate)
+                    }
+                },
+                year, month, day
+            )
+
+            // Set a minimum date (e.g., prevent selecting a past date)
+            datePickerDialog.datePicker.minDate = millisNow.toLong()*1000 - 1000
+            datePickerDialog.show()
+        }
+    }
+
+    private fun showTimePickerDialog(selectedDate: Calendar) {
+        // if shown time was wrong we should set the hour and minute based on our online time here
+        val hour = selectedDate.get(Calendar.HOUR_OF_DAY)
+        val minute = selectedDate.get(Calendar.MINUTE)
+
+        val timePickerDialog = TimePickerDialog(
+            this, { _, selectedHourOfDay, selectedMinute ->
+                // Combine date and time
+                selectedDate.set(Calendar.HOUR_OF_DAY, selectedHourOfDay)
+                selectedDate.set(Calendar.MINUTE, selectedMinute)
+
+                val combinedTimeInMillis = selectedDate.timeInMillis/1000
+                Log.d("finalCombinedTimeMillis", "$combinedTimeInMillis")
+
+                if (combinedTimeInMillis <= millisNow.toLong()) {
+                    showErrorSnackBar("Please select a future date", true)
+                } else {
+                    // Now, you can use combinedTimeInMillis for further processing
+                    finalTimeInMillis = combinedTimeInMillis.toString()
+                    //val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                    val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    formattedDateTime = sdf.format(selectedDate.time)
+                    tvSelectedDate.visibility = VISIBLE
+                    tvSelectedDate.text = "$finalTimeInMillis --- $formattedDateTime"
+                }
+            },
+            hour, minute, false
+        )
+
+        timePickerDialog.show()
+    }
+
+
 
 
 }

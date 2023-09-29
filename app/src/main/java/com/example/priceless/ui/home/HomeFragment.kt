@@ -74,7 +74,7 @@ class HomeFragment : Fragment() {
 
                         if (isAdded && isVisible) {
 
-                            posts.sortByDescending { it.timeCreated }
+                            posts.sortByDescending { it.timeCreatedMillis }
                             val adapter = context?.let {
                                 RecyclerviewAdapter(it, ArrayList(posts))
                             }

@@ -88,14 +88,13 @@ class FireStoreClass {
     }
 
 
-    fun deletePostOnFireStore(activity: Activity, postID: String, postImage: String){
+    fun deletePostOnFireStore(activity: Activity, postID: String){
         mFireStore.collection(Constants.USERS)
             .document(getUserID())
             .collection(Constants.Posts)
             .document(postID)
             .delete()
             .addOnSuccessListener {
-                deleteImageFromCloudStorage(postImage)
                 when(activity){
                     is EditPostActivity -> {
                         activity.deletePostOnFireStoreSuccess()
