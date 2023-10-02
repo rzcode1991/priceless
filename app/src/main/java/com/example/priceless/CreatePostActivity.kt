@@ -39,7 +39,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private var finalTimeInMillis: String = ""
     private var formattedDateTime: String = ""
     private var dateNow: String = ""
-    private var millisNow: String = ""
+    private var secondsNow: String = ""
     private var getTime: GetTime? = null
     private var dateAndTimePair: Pair<String?, String?>? = null
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
@@ -83,7 +83,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
 
     private suspend fun createPost() {
         getTimeNow()
-        if (millisNow.isEmpty() || dateNow.isEmpty()){
+        if (secondsNow.isEmpty() || dateNow.isEmpty()){
             showErrorSnackBar("error getting time online, try again", true)
             hideProgressDialog()
         }else{
@@ -92,7 +92,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             val userName = userInfo.userName
             val postText = etPostText.text.toString()
             val postImage = imageNameUrl
-            val timeCreatedMillis = millisNow
+            val timeCreatedMillis = secondsNow
             val timeCreatedToShow = dateNow
             val timeToShare = finalTimeInMillis.ifEmpty { "now" }
             val visibility = timeToShare == "now"
@@ -244,7 +244,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         if (dateAndTimePair != null){
             if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
                 dateNow = dateAndTimePair!!.first!!
-                millisNow = dateAndTimePair!!.second!!
+                secondsNow = dateAndTimePair!!.second!!
             }
         }
     }
@@ -255,7 +255,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         showProgressDialog()
         getTimeNow()
         hideProgressDialog()
-        if (dateNow.isEmpty() || millisNow.isEmpty()){
+        if (dateNow.isEmpty() || secondsNow.isEmpty()){
             showErrorSnackBar("error getting time online, try again", true)
         }else{
             val onlineTime = dateNow
@@ -285,8 +285,8 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                     //
                     selectedDate.set(Calendar.HOUR_OF_DAY, hour)
                     selectedDate.set(Calendar.MINUTE, minute)
-                    Log.d("compare", "${selectedDate.timeInMillis/1000} is it < ${millisNow.toLong()}")
-                    if (selectedDate.timeInMillis/1000+100 < millisNow.toLong()) {
+                    Log.d("compare", "${selectedDate.timeInMillis/1000} is it < ${secondsNow.toLong()}")
+                    if (selectedDate.timeInMillis/1000+100 < secondsNow.toLong()) {
                         showErrorSnackBar("Please select a future date", true)
                     } else {
                         showTimePickerDialog(selectedDate)
@@ -296,7 +296,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             )
 
             // Set a minimum date (e.g., prevent selecting a past date)
-            datePickerDialog.datePicker.minDate = millisNow.toLong()*1000 - 1000
+            datePickerDialog.datePicker.minDate = secondsNow.toLong()*1000 - 1000
             datePickerDialog.show()
         }
     }
@@ -315,7 +315,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                 val combinedTimeInMillis = selectedDate.timeInMillis/1000
                 Log.d("finalCombinedTimeMillis", "$combinedTimeInMillis")
 
-                if (combinedTimeInMillis <= millisNow.toLong()) {
+                if (combinedTimeInMillis <= secondsNow.toLong()) {
                     showErrorSnackBar("Please select a future date", true)
                 } else {
                     // Now, you can use combinedTimeInMillis for further processing

@@ -43,7 +43,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     private var newPostText: String = ""
     private var newPostImage: String = ""
     private var dateNow: String = ""
-    private var millisNow: String = ""
+    private var secondsNow: String = ""
     private var getTime: GetTime? = null
     private var dateAndTimePair: Pair<String?, String?>? = null
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
@@ -236,7 +236,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
 
     private suspend fun updatePost(){
         getTimeNow()
-        if (millisNow.isEmpty() || dateNow.isEmpty()){
+        if (secondsNow.isEmpty() || dateNow.isEmpty()){
             showErrorSnackBar("error getting time online, try again", true)
             hideProgressDialog()
         }else{
@@ -255,7 +255,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             }else{
                 newPostImage = post.postImage
             }
-            newTimeCreatedMillis = millisNow
+            newTimeCreatedMillis = secondsNow
             newTimeCreatedToShow = dateNow
             postHashMap["timeCreatedMillis"] = newTimeCreatedMillis
             postHashMap["timeCreatedToShow"] = newTimeCreatedToShow
@@ -270,7 +270,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         if (dateAndTimePair != null){
             if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
                 dateNow = dateAndTimePair!!.first!!
-                millisNow = dateAndTimePair!!.second!!
+                secondsNow = dateAndTimePair!!.second!!
             }
         }
     }

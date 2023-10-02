@@ -14,14 +14,30 @@
             android:layout_height="match_parent"
             tools:listitem="@layout/post_item"/>
 
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_margin="30dp"
+            android:layout_gravity="end|bottom">
 
-        <ImageButton
-            android:id="@+id/ib_create_post"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:src="@drawable/ic_baseline_create_24"
-            android:background="@drawable/create_background"
-            android:layout_gravity="end|bottom"
-            android:layout_margin="30dp"/>
+                <ImageButton
+                    android:id="@+id/ib_refresh"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginBottom="4dp"
+                    android:src="@drawable/ic_baseline_refresh_24"
+                    android:background="@drawable/create_background" />
+
+                <ImageButton
+                    android:id="@+id/ib_create_post"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_marginTop="4dp"
+                    android:src="@drawable/ic_baseline_create_24"
+                    android:background="@drawable/create_background" />
+
+        </LinearLayout>
 
 </FrameLayout>

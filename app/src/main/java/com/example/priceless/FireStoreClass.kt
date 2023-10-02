@@ -8,17 +8,20 @@ import android.util.Log
 import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.Source
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.ktx.storage
+import com.google.firebase.firestore.WriteBatch
 import kotlin.math.log
 
 
 class FireStoreClass {
 
     private val mFireStore: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private var postsListenerRegistration: ListenerRegistration? = null
 
     fun registerUserInFireStore(activity: SignUpActivity, userInfo: User){
         mFireStore.collection(Constants.USERS)
@@ -88,6 +91,35 @@ class FireStoreClass {
     }
 
 
+    fun batchUpdatePostsOnFireStore(activity: Activity, batchUpdates: Map<String, Map<String, Any>>, onComplete: (Boolean) -> Unit) {
+
+        // Create a batch object
+        val batch: WriteBatch = mFireStore.batch()
+
+        // Specify the path to the posts collection
+        val postsCollectionRef = mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+
+        // Iterate through the updates and add them to the batch
+        for ((documentId, data) in batchUpdates) {
+            val documentRef = postsCollectionRef.document(documentId)
+            batch.update(documentRef, data)
+        }
+
+        // Commit the batch updates
+        batch
+            .commit()
+            .addOnSuccessListener {
+                onComplete(true) // Callback indicating success
+            }
+            .addOnFailureListener { e ->
+                onComplete(false) // Callback indicating failure
+                Log.e("FireStoreClass", "Error updating posts in batch: ${e.message}")
+            }
+    }
+
+
     fun deletePostOnFireStore(activity: Activity, postID: String){
         mFireStore.collection(Constants.USERS)
             .document(getUserID())
@@ -112,7 +144,6 @@ class FireStoreClass {
     }
 
 
-    // maybe we should setOptions.merge()
     private fun createUserName(username: String){
         mFireStore.collection(Constants.UserNames)
             .document(getUserID())
@@ -159,31 +190,6 @@ class FireStoreClass {
     }
 
 
-
-
-    /*
-    fun isUserNameTaken(userName: String, callback: (Boolean) -> Unit) {
-        mFireStore.collection(Constants.UserNames)
-            .document(userName)
-            .get()
-            .addOnSuccessListener { documentSnapshot ->
-                if (documentSnapshot.exists() && documentSnapshot.getBoolean("taken") == true) {
-                    // Username is taken
-                    callback(true)
-                } else {
-                    // Username is available
-                    callback(false)
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("isUserNameTaken error", "error while checking for if userName is taken or not", e)
-                callback(false)
-            }
-    }
-
-     */
-
-
     fun getUserID(): String {
         val auth: FirebaseAuth = FirebaseAuth.getInstance()
         val currentUser = auth.currentUser
@@ -199,7 +205,7 @@ class FireStoreClass {
             .document(getUserID())
             .get()
             .addOnSuccessListener { document ->
-                Log.i(activity.javaClass.simpleName, document.toString())
+                //Log.i(activity.javaClass.simpleName, document.toString())
                 val user = document.toObject(User::class.java)!!
                 val sharedPreferences: SharedPreferences =
                     activity.getSharedPreferences(Constants.priceless_PREFERENCES, Context.MODE_PRIVATE)
@@ -241,9 +247,9 @@ class FireStoreClass {
     }
 
 
-    fun getUserInfoRealtimeListener(activity: Activity, listener: (User) -> Unit) {
+    fun getUserInfoRealtimeListener(activity: Activity, userID: String, listener: (User) -> Unit) {
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     Log.e(activity.javaClass.simpleName, "Error listening to user info", e)
@@ -258,8 +264,8 @@ class FireStoreClass {
     }
 
 
-    fun getPostsRealtimeListener(activity: Activity, listener: (ArrayList<PostStructure>) -> Unit) {
-        mFireStore.collection(Constants.USERS)
+    fun getPostsRealTimeListener(activity: Activity, listener: (ArrayList<PostStructure>) -> Unit) {
+        postsListenerRegistration = mFireStore.collection(Constants.USERS)
             .document(getUserID())
             .collection(Constants.Posts)
             .addSnapshotListener { snapshot, e ->
@@ -277,13 +283,64 @@ class FireStoreClass {
                             posts.add(post)
                         }
                     }
-
                     listener(posts)
                 }
             }
     }
 
+    fun removePostsSnapshotListener() {
+        postsListenerRegistration?.remove()
+    }
 
+
+
+    fun getPostsFromFireStore(activity: Activity) {
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val posts = ArrayList<PostStructure>()
+                for (document in snapshot.documents) {
+                    val post = document.toObject(PostStructure::class.java)
+                    if (post != null) {
+                        posts.add(post)
+                    }
+                }
+                //when(activity){
+                //    is FragmentActivity -> {
+                //        activity.successGettingPostsFromFireStore(posts)
+                //    }
+                //}
+            }
+            .addOnFailureListener { e ->
+                Log.e(activity.javaClass.simpleName, "Error getting posts from FireStore", e)
+            }
+    }
+
+
+    fun getPostsFromFireStoreAndReturnThem(callback: (ArrayList<PostStructure>) -> Unit) {
+        val posts = ArrayList<PostStructure>()
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                for (document in snapshot.documents) {
+                    val post = document.toObject(PostStructure::class.java)
+                    if (post != null) {
+                        posts.add(post)
+                    }
+                }
+                // Invoke the callback with the retrieved posts when successful
+                callback(posts)
+            }
+            .addOnFailureListener { e ->
+                Log.e("err getting posts", "Error getting posts from FireStore", e)
+                // Invoke the callback with an empty list or an error indicator if there's a failure
+                callback(ArrayList())
+            }
+    }
 
 
     fun updateUserInfoOnFireStore(activity: Activity, userHashMap: HashMap<String, Any>,
