@@ -247,30 +247,33 @@ class FireStoreClass {
     }
 
 
-    fun getUserInfoRealtimeListener(activity: Activity, userID: String, listener: (User) -> Unit) {
+    fun getUserInfoRealtimeListener(activity: Activity, listener: (User?, Boolean) -> Unit) {
         mFireStore.collection(Constants.USERS)
-            .document(userID)
+            .document(getUserID())
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     Log.e(activity.javaClass.simpleName, "Error listening to user info", e)
+                    listener(null, false)
                     return@addSnapshotListener
                 }
 
                 if (snapshot != null && snapshot.exists()) {
                     val user = snapshot.toObject(User::class.java)!!
-                    listener(user)
+                    listener(user, true)
                 }
             }
     }
 
 
-    fun getPostsRealTimeListener(activity: Activity, listener: (ArrayList<PostStructure>) -> Unit) {
+
+    fun getPostsRealTimeListener(activity: Activity, listener: (ArrayList<PostStructure>?, Boolean) -> Unit) {
         postsListenerRegistration = mFireStore.collection(Constants.USERS)
             .document(getUserID())
             .collection(Constants.Posts)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     Log.e(activity.javaClass.simpleName, "Error listening to user info", e)
+                    listener(null, false)
                     return@addSnapshotListener
                 }
 
@@ -283,10 +286,12 @@ class FireStoreClass {
                             posts.add(post)
                         }
                     }
-                    listener(posts)
+
+                    listener(posts, true)
                 }
             }
     }
+
 
     fun removePostsSnapshotListener() {
         postsListenerRegistration?.remove()
