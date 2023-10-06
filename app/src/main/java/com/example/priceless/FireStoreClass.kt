@@ -51,18 +51,20 @@ class FireStoreClass {
                 val postID = documentReference.id
 
                 postCollection.document(postID).update("postID", postID)
-
-                // Update the post with the generated postID
-                //val postWithID = post.copy(postID = postID) // Assuming you have a postID field in PostStructure
-                //postCollection.document(postID)
-                //    .set(postWithID) // maybe we should use update instead of set
-
-                activity.createPostSuccessful()
+                    .addOnSuccessListener {
+                        // This block is executed if the postID update is successful
+                        activity.createPostSuccessful()
+                    }
+                    .addOnFailureListener { e ->
+                        activity.hideProgressDialog()
+                        Log.e(activity.javaClass.simpleName, "Error while updating postID", e)
+                    }
             }
             .addOnFailureListener { e ->
                 activity.hideProgressDialog()
-                Log.e(activity.javaClass.simpleName, "error while creating post on FireStore", e)
+                Log.e(activity.javaClass.simpleName, "Error while creating post on FireStore", e)
             }
+
     }
 
 
@@ -111,10 +113,10 @@ class FireStoreClass {
         batch
             .commit()
             .addOnSuccessListener {
-                onComplete(true) // Callback indicating success
+                onComplete(true)
             }
             .addOnFailureListener { e ->
-                onComplete(false) // Callback indicating failure
+                onComplete(false)
                 Log.e("FireStoreClass", "Error updating posts in batch: ${e.message}")
             }
     }

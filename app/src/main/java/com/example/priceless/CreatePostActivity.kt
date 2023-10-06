@@ -96,11 +96,25 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             val timeCreatedToShow = dateNow
             val timeToShare = finalTimeInMillis.ifEmpty { "now" }
             val visibility = timeToShare == "now"
-            val postID = ""
-            val edited = false
-            newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
-                timeCreatedMillis, timeCreatedToShow, timeToShare, visibility, postID, edited)
-            FireStoreClass().createPostOnFireStore(this, newPost)
+            val timeTraveler = !visibility
+            if (timeTraveler){
+                if (timeToShare.toLong() <= secondsNow.toLong()){
+                    showErrorSnackBar("Please select a future date", true)
+                    hideProgressDialog()
+                }else{
+                    val postID = ""
+                    val edited = false
+                    newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
+                        timeCreatedMillis, timeCreatedToShow, timeToShare, visibility, timeTraveler, postID, edited)
+                    FireStoreClass().createPostOnFireStore(this, newPost)
+                }
+            }else{
+                val postID = ""
+                val edited = false
+                newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
+                    timeCreatedMillis, timeCreatedToShow, timeToShare, visibility, timeTraveler, postID, edited)
+                FireStoreClass().createPostOnFireStore(this, newPost)
+            }
         }
     }
 
@@ -286,7 +300,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                     selectedDate.set(Calendar.HOUR_OF_DAY, hour)
                     selectedDate.set(Calendar.MINUTE, minute)
                     Log.d("compare", "${selectedDate.timeInMillis/1000} is it < ${secondsNow.toLong()}")
-                    if (selectedDate.timeInMillis/1000+100 < secondsNow.toLong()) {
+                    if (selectedDate.timeInMillis/1000 <= secondsNow.toLong()) {
                         showErrorSnackBar("Please select a future date", true)
                     } else {
                         showTimePickerDialog(selectedDate)
@@ -324,7 +338,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                     formattedDateTime = sdf.format(selectedDate.time)
                     tvSelectedDate.visibility = VISIBLE
-                    tvSelectedDate.text = "$finalTimeInMillis --- $formattedDateTime"
+                    tvSelectedDate.text = "will be visible at: $formattedDateTime"
                 }
             },
             hour, minute, false

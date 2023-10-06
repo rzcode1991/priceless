@@ -51,6 +51,11 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
         }else{
             holder.timeCreatedText.text = "err getting time online"
         }
+        if (currentItemPost.timeTraveler){
+            holder.tvPriceless.visibility = View.VISIBLE
+        }else{
+            holder.tvPriceless.visibility = View.GONE
+        }
         // TODO go to a user profile page
         holder.profilePic.setOnClickListener {
             Toast.makeText(context, "you clicked on profile pic", Toast.LENGTH_SHORT).show()
@@ -73,6 +78,7 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
         val postText: TextView = itemView.findViewById(R.id.tv_post_content_post_item)
         val postImage: ImageView = itemView.findViewById(R.id.iv_post_image_post_item)
         val timeCreatedText: TextView = itemView.findViewById(R.id.tv_time_created_post_item)
+        val tvPriceless: TextView = itemView.findViewById(R.id.tv_priceless)
         val viewMore: ImageView = itemView.findViewById(R.id.iv_tap_for_more_post_item)
     }
 

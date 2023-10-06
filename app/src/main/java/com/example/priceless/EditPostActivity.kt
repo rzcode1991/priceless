@@ -256,9 +256,9 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                 newPostImage = post.postImage
             }
             newTimeCreatedMillis = secondsNow
-            newTimeCreatedToShow = dateNow
+            //newTimeCreatedToShow = dateNow
             postHashMap["timeCreatedMillis"] = newTimeCreatedMillis
-            postHashMap["timeCreatedToShow"] = newTimeCreatedToShow
+            //postHashMap["timeCreatedToShow"] = newTimeCreatedToShow
             postHashMap["edited"] = true
             FireStoreClass().updatePostOnFireStore(this@EditPostActivity, postHashMap, postID)
         }
@@ -280,7 +280,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         sortedPosts.remove(post.timeCreatedMillis)
         // assuming that only visible posts are editable
         newPost = PostStructure(post.profilePicture, post.userId, post.userName, newPostText,
-            newPostImage, newTimeCreatedMillis, newTimeCreatedToShow, "now", true, post.postID, true)
+            newPostImage, newTimeCreatedMillis, newTimeCreatedToShow, "now", true, false, post.postID, true)
         sortedPosts[newTimeCreatedMillis] = newPost
         hideProgressDialog()
         Toast.makeText(this, "post updated successfully", Toast.LENGTH_LONG).show()

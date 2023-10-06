@@ -83,7 +83,7 @@
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
                     android:text="Time Created"
-                    android:layout_gravity="start"
+                    android:layout_gravity="start|center"
                     android:textSize="12sp"
                     android:textColor="#5E5A5A"/>
 
@@ -96,6 +96,18 @@
                     android:layout_gravity="end"/>
 
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_priceless"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Priceless"
+                android:layout_gravity="start"
+                android:textSize="12sp"
+                android:visibility="gone"
+                android:layout_marginStart="4dp"
+                android:layout_marginBottom="4dp"
+                android:textColor="#5E5A5A"/>
 
         </LinearLayout>
 
