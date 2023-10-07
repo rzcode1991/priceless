@@ -24,6 +24,7 @@ class HomeFragment : Fragment() {
     private var getTime: GetTime? = null
     private var dateAndTimePair: Pair<String?, String?>? = null
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
+    private var firstRequestTimeMillis: Long = 6000L
     private var lastRequestTimeMillis: Long = 0L
     private val requestCoolDownMillis: Long = 5000L
     private lateinit var homeViewModel: HomeViewModel
@@ -96,8 +97,10 @@ class HomeFragment : Fragment() {
         binding.ibRefresh.setImageResource(R.drawable.ic_baseline_downloading_24)
         fireStoreClass.getPostsRealTimeListener(requireActivity()) { posts, success ->
             if (success && posts != null && posts.isNotEmpty()){
+                posts.sortBy { it.timeToShare.toLong() }
                 Log.d("posts beginning are:", "$posts")
                 val visiblePosts = ArrayList(posts.filter { it.visibility })
+                Log.d("already visible posts at beginning are:", "$visiblePosts")
                 val postsToUpdate = mutableListOf<PostStructure>()
                 for (post in posts){
                     if (!post.visibility) {
@@ -108,40 +111,41 @@ class HomeFragment : Fragment() {
                             lastRequestTimeMillis = System.currentTimeMillis()
                             coroutineScope.launch {
                                 getTimeNow()
+                                Log.d("getTimeCalled", "date: $dateNow sec: $secondsNow")
                                 if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
                                     if (secondsNow.toLong() >= post.timeToShare.toLong()) {
                                         postsToUpdate.add(post)
                                         Log.d("posts to update are:", "$postsToUpdate")
-                                    }
-                                }
-                                if (postsToUpdate.size == 1) {
-                                    val postToBeUpdated = postsToUpdate[0]
-                                    Log.d("1 post t b updated is:", "$postToBeUpdated")
-                                    val postHashMap = HashMap<String, Any>()
-                                    postHashMap["visibility"] = true
-                                    postHashMap["timeCreatedMillis"] = secondsNow
-                                    fireStoreClass.updatePostOnFireStore(requireActivity(), postHashMap, postToBeUpdated.postID)
-                                    visiblePosts.add(postToBeUpdated)
-                                    Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
-                                }else if (postsToUpdate.size > 1){
-                                    // TODO: problem with list posts to be updated
-                                    Log.d("list of posts to be updated is:", "$postsToUpdate")
-                                    val batchUpdates = mutableMapOf<String, Map<String, Any>>()
-                                    for (eachPost in postsToUpdate) {
-                                        val postHashMap = HashMap<String, Any>()
-                                        postHashMap["visibility"] = true
-                                        postHashMap["timeCreatedMillis"] = secondsNow
-                                        batchUpdates[eachPost.postID] = postHashMap
-                                    }
-                                    fireStoreClass.batchUpdatePostsOnFireStore(requireActivity(), batchUpdates) { successfully ->
-                                        if (successfully) {
-                                            //for (p in postsToUpdate){
-                                            //    visiblePosts.add(p)
-                                            //}
-                                            visiblePosts.addAll(postsToUpdate)
-                                            Log.d("visible posts after adding list of posts for update:", "$visiblePosts")
-                                        }else{
-                                            Log.d("batchUpdate failed", "error while updating multiple posts on fireStore")
+                                        if (postsToUpdate.size == 1) {
+                                            val postToBeUpdated = postsToUpdate[0]
+                                            Log.d("1 post t b updated is:", "$postToBeUpdated")
+                                            val postHashMap = HashMap<String, Any>()
+                                            postHashMap["visibility"] = true
+                                            postHashMap["timeCreatedMillis"] = secondsNow
+                                            fireStoreClass.updatePostOnFireStore(requireActivity(), postHashMap, postToBeUpdated.postID)
+                                            visiblePosts.add(postToBeUpdated)
+                                            Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
+                                        }else if (postsToUpdate.size > 1){
+                                            // TODO: problem with list posts to be updated
+                                            Log.d("list of posts to be updated is:", "$postsToUpdate")
+                                            val batchUpdates = mutableMapOf<String, Map<String, Any>>()
+                                            for (eachPost in postsToUpdate) {
+                                                val postHashMap = HashMap<String, Any>()
+                                                postHashMap["visibility"] = true
+                                                postHashMap["timeCreatedMillis"] = secondsNow
+                                                batchUpdates[eachPost.postID] = postHashMap
+                                            }
+                                            fireStoreClass.batchUpdatePostsOnFireStore(requireActivity(), batchUpdates) { successfully ->
+                                                if (successfully) {
+                                                    //for (p in postsToUpdate){
+                                                    //    visiblePosts.add(p)
+                                                    //}
+                                                    visiblePosts.addAll(postsToUpdate)
+                                                    Log.d("visible posts after adding list of posts for update:", "$visiblePosts")
+                                                }else{
+                                                    Log.d("batchUpdate failed", "error while updating multiple posts on fireStore")
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -156,10 +160,10 @@ class HomeFragment : Fragment() {
                             i.profilePicture = user.image
                             i.userName = user.userName
                         }
-                        visiblePosts.sortByDescending { it.timeCreatedMillis }
+                        visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
+                        Log.d("final visible posts are:", "$visiblePosts")
                         homeViewModel.updatePosts(visiblePosts)
                         binding.ibRefresh.setImageResource(R.drawable.ic_baseline_refresh_24)
-                        Log.d("so visible posts are:", "$visiblePosts")
                     }
                 }
             }
@@ -169,6 +173,7 @@ class HomeFragment : Fragment() {
 
 
     private suspend fun getTimeNow(){
+        firstRequestTimeMillis = System.currentTimeMillis()
         dateAndTimePair = getTime?.getCurrentTimeAndDate()
         if (dateAndTimePair != null){
             if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){

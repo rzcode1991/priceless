@@ -300,7 +300,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                     selectedDate.set(Calendar.HOUR_OF_DAY, hour)
                     selectedDate.set(Calendar.MINUTE, minute)
                     Log.d("compare", "${selectedDate.timeInMillis/1000} is it < ${secondsNow.toLong()}")
-                    if (selectedDate.timeInMillis/1000 <= secondsNow.toLong()) {
+                    if (selectedDate.timeInMillis/1000+20 < secondsNow.toLong()) {
                         showErrorSnackBar("Please select a future date", true)
                     } else {
                         showTimePickerDialog(selectedDate)
