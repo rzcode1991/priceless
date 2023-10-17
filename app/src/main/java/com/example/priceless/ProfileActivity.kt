@@ -16,6 +16,7 @@ import android.widget.*
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.io.IOException
@@ -23,11 +24,14 @@ import java.io.IOException
 class ProfileActivity : BaseActivity(), OnClickListener {
 
     private lateinit var ivImageProfile: ImageView
-    private lateinit var etUserName: EditText
-    private lateinit var etFirstName: EditText
-    private lateinit var etLastName: EditText
-    private lateinit var etEmail: EditText
-    private lateinit var etPhoneNumber: EditText
+    private lateinit var etUserName: TextInputEditText
+    private lateinit var etFirstName: TextInputEditText
+    private lateinit var etLastName: TextInputEditText
+    private lateinit var etEmail: TextInputEditText
+    private lateinit var etPhoneNumber: TextInputEditText
+    private lateinit var radioGroup: RadioGroup
+    private lateinit var rbPublic: RadioButton
+    private lateinit var rbPrivate: RadioButton
     private lateinit var btnSave: Button
     private lateinit var userInfo: User
     private var imageNameUrl: String = ""
@@ -45,12 +49,16 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         etLastName = findViewById(R.id.et_lastName_profile)
         etEmail = findViewById(R.id.et_email_profile)
         etPhoneNumber = findViewById(R.id.et_phoneNumber_profile)
+        radioGroup = findViewById(R.id.radioGroup_profile)
+        rbPublic = findViewById(R.id.rb_public_profile)
+        rbPrivate = findViewById(R.id.rb_private_profile)
         btnSave = findViewById(R.id.btn_save_profile)
         toolbarProfile = findViewById(R.id.toolbar_profile)
         btnLogOut = findViewById(R.id.btn_LogOut_profile)
 
         showProgressDialog()
-        FireStoreClass().getUserInfoFromFireStore(this)
+        val userID = FireStoreClass().getUserID()
+        FireStoreClass().getUserInfoFromFireStore(this, userID)
 
         ivImageProfile.setOnClickListener(this@ProfileActivity)
         btnSave.setOnClickListener(this@ProfileActivity)
@@ -72,8 +80,11 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         etLastName.setText(userInfo.lastName)
         etEmail.isEnabled = false
         etEmail.setText(userInfo.email)
-        if (userInfo.phoneNumber != 0L){
-            etPhoneNumber.setText(userInfo.phoneNumber.toString())
+        etPhoneNumber.setText(userInfo.phoneNumber.toString())
+        if (userInfo.publicProfile){
+            rbPublic.isChecked = true
+        }else{
+            rbPrivate.isChecked = true
         }
         GlideLoader(this).loadImageUri(userInfo.image, ivImageProfile)
     }
@@ -165,18 +176,26 @@ class ProfileActivity : BaseActivity(), OnClickListener {
     private fun validateUserInput(callback: (Boolean) -> Unit){
         when{
             TextUtils.isEmpty(etPhoneNumber.text.toString().trim { it <= ' ' }) -> {
-                showErrorSnackBar("enter phone number", true)
+                showErrorSnackBar("Please Enter Phone Number", true)
                 callback(false)
             }
-            TextUtils.isEmpty(etUserName.text.toString().trim { it <= ' ' }) -> {
-                showErrorSnackBar("enter user name", true)
+            TextUtils.isEmpty(etUserName.text.toString().lowercase().trim { it <= ' ' }) -> {
+                showErrorSnackBar("Please Enter User Name", true)
+                callback(false)
+            }
+            TextUtils.isEmpty(etFirstName.text.toString().trim { it <= ' ' }) -> {
+                showErrorSnackBar("Please Enter First Name", true)
+                callback(false)
+            }
+            TextUtils.isEmpty(etLastName.text.toString().trim { it <= ' ' }) -> {
+                showErrorSnackBar("Please Enter Last Name", true)
                 callback(false)
             }
             else -> {
                 // Check if the username is taken
-                if (userInfo.userName != etUserName.text.toString().trim { it <= ' ' }){
+                if (userInfo.userName != etUserName.text.toString().lowercase().trim { it <= ' ' }){
                     showProgressDialog()
-                    FireStoreClass().isUserNameTaken(etUserName.text.toString().trim { it <= ' ' }) { isTaken ->
+                    FireStoreClass().isUserNameTaken(etUserName.text.toString().lowercase().trim { it <= ' ' }) { isTaken ->
                         hideProgressDialog()
                         if (isTaken) {
                             showErrorSnackBar("User Name Is Already Taken", true)
@@ -200,7 +219,7 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         if (imageNameUrl.isNotEmpty()){
             userHashMap[Constants.Image] = imageNameUrl
         }
-        val userName = etUserName.text.toString().trim { it <= ' ' }
+        val userName = etUserName.text.toString().lowercase().trim { it <= ' ' }
         val firstName = etFirstName.text.toString().trim { it <= ' ' }
         val lastName = etLastName.text.toString().trim { it <= ' ' }
 
@@ -216,6 +235,9 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         if (lastName != userInfo.lastName){
             userHashMap[Constants.LastName] = lastName
         }
+        val publicProfile = rbPublic.isChecked
+        userHashMap["publicProfile"] = publicProfile
+
         userHashMap[Constants.ProfileCompleted] = 1
 
         FireStoreClass().updateUserInfoOnFireStore(this@ProfileActivity, userHashMap,

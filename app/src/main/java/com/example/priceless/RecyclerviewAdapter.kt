@@ -17,7 +17,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<PostStructure>):
+class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<PostStructure>,
+                          private val currentUserID: String):
     RecyclerView.Adapter<RecyclerviewAdapter.ExampleViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ExampleViewHolder {
@@ -60,10 +61,15 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
         holder.profilePic.setOnClickListener {
             Toast.makeText(context, "you clicked on profile pic", Toast.LENGTH_SHORT).show()
         }
-        holder.viewMore.setOnClickListener {
-            val intent = Intent(context, EditPostActivity::class.java)
-            intent.putExtra("entire_post", currentItemPost)
-            context.startActivity(intent)
+        if (currentUserID == currentItemPost.userId){
+            holder.viewMore.visibility = View.VISIBLE
+            holder.viewMore.setOnClickListener {
+                val intent = Intent(context, EditPostActivity::class.java)
+                intent.putExtra("entire_post", currentItemPost)
+                context.startActivity(intent)
+            }
+        }else{
+            holder.viewMore.visibility = View.GONE
         }
         holder.userName.text = currentItemPost.userName
     }

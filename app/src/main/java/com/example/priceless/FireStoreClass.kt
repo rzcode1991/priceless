@@ -22,6 +22,7 @@ class FireStoreClass {
 
     private val mFireStore: FirebaseFirestore = FirebaseFirestore.getInstance()
     private var postsListenerRegistration: ListenerRegistration? = null
+    private var userListenerRegistration: ListenerRegistration? = null
 
     fun registerUserInFireStore(activity: SignUpActivity, userInfo: User){
         mFireStore.collection(Constants.USERS)
@@ -29,12 +30,63 @@ class FireStoreClass {
             .set(userInfo, SetOptions.merge())
             .addOnSuccessListener {
                 // User registration successful, now create the username
-                createUserName(userInfo.userName)
-                activity.registrationSuccessful()
+                createUserName(userInfo.userName, activity)
+                //activity.registrationSuccessful()
             }
             .addOnFailureListener { e ->
                 activity.hideProgressDialog()
                 Log.e(activity.javaClass.simpleName, "error while registering user on fireStore", e)
+            }
+    }
+
+
+
+    fun createFollowRequest(activity: Activity, request: FollowRequest){
+        mFireStore.collection(Constants.USERS)
+            .document(request.receiverUserID)
+            .collection("requests")
+            .document(request.senderUserID)
+            .set(request, SetOptions.merge())
+            .addOnSuccessListener {
+                when(activity){
+                    is SearchActivity -> {
+                        activity.createFollowRequestSuccessful(request)
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                when(activity){
+                    is SearchActivity -> {
+                        activity.hideProgressDialog()
+                        activity.showErrorSnackBar(e.message.toString(), true)
+                    }
+                }
+                Log.e(activity.javaClass.simpleName, "error creating follow request", e)
+            }
+    }
+
+
+    fun checkFollowSituation(currentUserID: String, otherUserID: String, situation: (String) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(otherUserID)
+            .collection("requests")
+            .whereEqualTo("senderUserID", currentUserID)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    if (documents.documents[0].get("accepted") as Boolean){
+                        situation("following")
+                    }else{
+                        situation("pending")
+                    }
+                }else{
+                    // there is no request between two users
+                    situation("follow")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("checkFollowSituation Err", "Error while checking follow situation", e)
+                situation("")
             }
     }
 
@@ -57,7 +109,7 @@ class FireStoreClass {
                     }
                     .addOnFailureListener { e ->
                         activity.hideProgressDialog()
-                        Log.e(activity.javaClass.simpleName, "Error while updating postID", e)
+                        Log.e(activity.javaClass.simpleName, "Error while updating postID when creating new post", e)
                     }
             }
             .addOnFailureListener { e ->
@@ -69,9 +121,9 @@ class FireStoreClass {
 
 
 
-    fun updatePostOnFireStore(activity: Activity, postHashMap: HashMap<String, Any>, postID: String){
+    fun updatePostOnFireStore(activity: Activity, userID: String, postHashMap: HashMap<String, Any>, postID: String){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .update(postHashMap)
@@ -93,14 +145,14 @@ class FireStoreClass {
     }
 
 
-    fun batchUpdatePostsOnFireStore(activity: Activity, batchUpdates: Map<String, Map<String, Any>>, onComplete: (Boolean) -> Unit) {
+    fun batchUpdatePostsOnFireStore(activity: Activity, userID: String, batchUpdates: Map<String, Map<String, Any>>, onComplete: (Boolean) -> Unit) {
 
         // Create a batch object
         val batch: WriteBatch = mFireStore.batch()
 
         // Specify the path to the posts collection
         val postsCollectionRef = mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
 
         // Iterate through the updates and add them to the batch
@@ -146,17 +198,23 @@ class FireStoreClass {
     }
 
 
-    private fun createUserName(username: String){
+    private fun createUserName(username: String, activity: SignUpActivity){
+        val userID = getUserID()
+        val data = mapOf("username" to username, "userID" to userID)
+
         mFireStore.collection(Constants.UserNames)
-            .document(getUserID())
-            .set(mapOf("username" to username), SetOptions.merge())
+            .document(userID)
+            .set(data, SetOptions.merge())
             .addOnSuccessListener {
                 // Username added successfully
+                activity.registrationSuccessful()
             }
             .addOnFailureListener { e ->
+                activity.hideProgressDialog()
                 Log.e("createUserName error", "error while creating userName", e)
             }
     }
+
 
 
     private fun updateUserName(newUserName: String){
@@ -192,6 +250,55 @@ class FireStoreClass {
     }
 
 
+    fun getUsernameByUserID(userID: String, callback: (String?) -> Unit) {
+        mFireStore.collection(Constants.UserNames)
+            .whereEqualTo("userID", userID)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    callback(documents.documents[0].get("username") as String)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("getUsernameByUserID error", "error while getting username by userID", e)
+                callback(null)
+            }
+    }
+
+
+    fun getUserIDByUsername(usernameToSearch: String, callback: (String?) -> Unit) {
+        mFireStore.collection(Constants.UserNames)
+            .whereEqualTo("username", usernameToSearch)
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty) {
+                    callback(documents.documents[0].get("userID") as String)
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("getUserIDByUsername error", "error while getting userID by username", e)
+                callback(null)
+            }
+    }
+
+
+    fun getCurrentUserID(onUserIDObtained: (String) -> Unit) {
+        val auth: FirebaseAuth = FirebaseAuth.getInstance()
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            val currentUserID = currentUser.uid
+            onUserIDObtained(currentUserID)
+        } else {
+            onUserIDObtained("")
+        }
+    }
+
+    // same
+
     fun getUserID(): String {
         val auth: FirebaseAuth = FirebaseAuth.getInstance()
         val currentUser = auth.currentUser
@@ -202,18 +309,18 @@ class FireStoreClass {
         return currentUserID
     }
 
-    fun getUserInfoFromFireStore(activity: Activity){
+
+    fun getUserInfoFromFireStore(activity: Activity, userID: String){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .get()
             .addOnSuccessListener { document ->
-                //Log.i(activity.javaClass.simpleName, document.toString())
                 val user = document.toObject(User::class.java)!!
-                val sharedPreferences: SharedPreferences =
-                    activity.getSharedPreferences(Constants.priceless_PREFERENCES, Context.MODE_PRIVATE)
-                val editor: SharedPreferences.Editor = sharedPreferences.edit()
-                editor.putString(Constants.LOGGEDInUSER, "${user.firstName} ${user.lastName}")
-                editor.apply()
+                //val sharedPreferences: SharedPreferences =
+                //    activity.getSharedPreferences(Constants.priceless_PREFERENCES, Context.MODE_PRIVATE)
+                //val editor: SharedPreferences.Editor = sharedPreferences.edit()
+                //editor.putString(Constants.LOGGEDInUSER, "${user.firstName} ${user.lastName}")
+                //editor.apply()
                 when(activity){
                     is LogIn -> {
                         activity.successGettingUserInfoFromFireStore(user)
@@ -225,6 +332,9 @@ class FireStoreClass {
                         activity.successGettingUserInfoFromFireStore(user)
                     }
                     is CreatePostActivity -> {
+                        activity.successGettingUserInfoFromFireStore(user)
+                    }
+                    is SearchActivity -> {
                         activity.successGettingUserInfoFromFireStore(user)
                     }
                 }
@@ -243,15 +353,18 @@ class FireStoreClass {
                     is CreatePostActivity -> {
                         activity.hideProgressDialog()
                     }
+                    is SearchActivity -> {
+                        activity.hideProgressDialog()
+                    }
                 }
-                Log.e(activity.javaClass.simpleName, "error while getting user info from fireStore", e)
+                Log.e(activity.javaClass.simpleName, "error getting user info from fireStore", e)
             }
     }
 
 
-    fun getUserInfoRealtimeListener(activity: Activity, listener: (User?, Boolean) -> Unit) {
-        mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+    fun getUserInfoRealtimeListener(activity: Activity, userID: String, listener: (User?, Boolean) -> Unit) {
+        userListenerRegistration = mFireStore.collection(Constants.USERS)
+            .document(userID)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
                     Log.e(activity.javaClass.simpleName, "Error listening to user info", e)
@@ -268,9 +381,9 @@ class FireStoreClass {
 
 
 
-    fun getPostsRealTimeListener(activity: Activity, listener: (ArrayList<PostStructure>?, Boolean) -> Unit) {
+    fun getPostsRealTimeListener(activity: Activity, userID: String, listener: (ArrayList<PostStructure>?, Boolean) -> Unit) {
         postsListenerRegistration = mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
@@ -297,6 +410,11 @@ class FireStoreClass {
 
     fun removePostsSnapshotListener() {
         postsListenerRegistration?.remove()
+    }
+
+
+    fun removeUsersSnapshotListener() {
+        userListenerRegistration?.remove()
     }
 
 

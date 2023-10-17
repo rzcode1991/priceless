@@ -25,7 +25,8 @@ class MainActivity : BaseActivity() {
         setSupportActionBar(toolbarMain)
 
         showProgressDialog()
-        FireStoreClass().getUserInfoFromFireStore(this)
+        val userID = FireStoreClass().getUserID()
+        FireStoreClass().getUserInfoFromFireStore(this, userID)
 
     }
 

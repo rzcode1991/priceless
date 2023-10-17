@@ -10,9 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.priceless.*
 import com.example.priceless.databinding.FragmentHomeBinding
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 
 class HomeFragment : Fragment() {
@@ -23,8 +21,7 @@ class HomeFragment : Fragment() {
     private var secondsNow: String = ""
     private var getTime: GetTime? = null
     private var dateAndTimePair: Pair<String?, String?>? = null
-    private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
-    private var firstRequestTimeMillis: Long = 6000L
+    private lateinit var coroutineScope: CoroutineScope
     private var lastRequestTimeMillis: Long = 0L
     private val requestCoolDownMillis: Long = 5000L
     private lateinit var homeViewModel: HomeViewModel
@@ -38,8 +35,9 @@ class HomeFragment : Fragment() {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
 
-        fireStoreClass = FireStoreClass()
-        getTime = GetTime()
+        Log.d("onCreate called", "")
+        //fireStoreClass = FireStoreClass()
+        //getTime = GetTime()
 
     }
 
@@ -49,6 +47,10 @@ class HomeFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
 
+        fireStoreClass = FireStoreClass()
+        getTime = GetTime()
+        coroutineScope = CoroutineScope(Dispatchers.Main)
+        Log.d("onCreateView called", "")
         //val homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
 
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
@@ -65,12 +67,14 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        Log.d("onViewCreated called", "")
 
         homeViewModel = ViewModelProvider(requireActivity()).get(HomeViewModel::class.java)
 
         binding.ibCreatePost.setOnClickListener {
             val intent = Intent(activity, CreatePostActivity::class.java)
             startActivity(intent)
+            // we could finish the activity and override onBackPressed, if too many request bothers
         }
 
         binding.ibRefresh.setOnClickListener {
@@ -79,9 +83,10 @@ class HomeFragment : Fragment() {
 
         loadPosts()
 
+        val currentUserID = fireStoreClass.getUserID()
+
         homeViewModel.posts.observe(viewLifecycleOwner) { posts ->
-            // Update your RecyclerView adapter with the new data
-            val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts))
+            val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts), currentUserID)
             adapter.notifyDataSetChanged()
             val layoutManager = LinearLayoutManager(requireContext())
             binding.recyclerView.layoutManager = layoutManager
@@ -92,88 +97,117 @@ class HomeFragment : Fragment() {
     }
 
 
+
     private fun loadPosts() {
         Log.d("call number", "1")
-        binding.ibRefresh.setImageResource(R.drawable.ic_baseline_downloading_24)
-        fireStoreClass.getPostsRealTimeListener(requireActivity()) { posts, success ->
+        if (_binding != null){
+            binding.ibRefresh.setImageResource(R.drawable.ic_baseline_downloading_24)
+        }
+        val userID = fireStoreClass.getUserID()
+        fireStoreClass.getPostsRealTimeListener(requireActivity(), userID) { posts, success ->
             if (success && posts != null && posts.isNotEmpty()){
-                posts.sortBy { it.timeToShare.toLong() }
                 Log.d("posts beginning are:", "$posts")
                 val visiblePosts = ArrayList(posts.filter { it.visibility })
                 Log.d("already visible posts at beginning are:", "$visiblePosts")
                 val postsToUpdate = mutableListOf<PostStructure>()
-                for (post in posts){
-                    if (!post.visibility) {
-                        if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis) {
-                            Log.d("time:", "SystemCurrentTime: ${System.currentTimeMillis()} " +
-                                    "lastRequestTimeMillis: $lastRequestTimeMillis " +
-                                    "requestCoolDownMillis: $requestCoolDownMillis")
-                            lastRequestTimeMillis = System.currentTimeMillis()
-                            coroutineScope.launch {
-                                getTimeNow()
-                                Log.d("getTimeCalled", "date: $dateNow sec: $secondsNow")
-                                if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
+                if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis){
+                    lastRequestTimeMillis = System.currentTimeMillis()
+                    coroutineScope.launch {
+                        getTimeNow()
+                        Log.d("getTimeCalled", "date: $dateNow sec: $secondsNow")
+                        if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
+                            for (post in posts){
+                                if (!post.visibility){
                                     if (secondsNow.toLong() >= post.timeToShare.toLong()) {
                                         postsToUpdate.add(post)
                                         Log.d("posts to update are:", "$postsToUpdate")
-                                        if (postsToUpdate.size == 1) {
-                                            val postToBeUpdated = postsToUpdate[0]
-                                            Log.d("1 post t b updated is:", "$postToBeUpdated")
-                                            val postHashMap = HashMap<String, Any>()
-                                            postHashMap["visibility"] = true
-                                            postHashMap["timeCreatedMillis"] = secondsNow
-                                            fireStoreClass.updatePostOnFireStore(requireActivity(), postHashMap, postToBeUpdated.postID)
-                                            visiblePosts.add(postToBeUpdated)
-                                            Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
-                                        }else if (postsToUpdate.size > 1){
-                                            // TODO: problem with list posts to be updated
-                                            Log.d("list of posts to be updated is:", "$postsToUpdate")
-                                            val batchUpdates = mutableMapOf<String, Map<String, Any>>()
-                                            for (eachPost in postsToUpdate) {
-                                                val postHashMap = HashMap<String, Any>()
-                                                postHashMap["visibility"] = true
-                                                postHashMap["timeCreatedMillis"] = secondsNow
-                                                batchUpdates[eachPost.postID] = postHashMap
-                                            }
-                                            fireStoreClass.batchUpdatePostsOnFireStore(requireActivity(), batchUpdates) { successfully ->
-                                                if (successfully) {
-                                                    //for (p in postsToUpdate){
-                                                    //    visiblePosts.add(p)
-                                                    //}
-                                                    visiblePosts.addAll(postsToUpdate)
-                                                    Log.d("visible posts after adding list of posts for update:", "$visiblePosts")
-                                                }else{
-                                                    Log.d("batchUpdate failed", "error while updating multiple posts on fireStore")
-                                                }
-                                            }
-                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-                fireStoreClass.getUserInfoRealtimeListener(requireActivity()) { user, successful ->
-                    if (successful && user != null){
-                        Log.d("user is:", "$user")
-                        for (i in visiblePosts){
-                            i.profilePicture = user.image
-                            i.userName = user.userName
+                coroutineScope.launch {
+                    delay(1000)
+                    if (postsToUpdate.isNotEmpty()){
+                        if (postsToUpdate.size == 1) {
+                            val postToBeUpdated = postsToUpdate[0]
+                            Log.d("1 post t b updated is:", "$postToBeUpdated")
+                            val postHashMap = HashMap<String, Any>()
+                            postHashMap["visibility"] = true
+                            postHashMap["timeCreatedMillis"] = secondsNow
+                            fireStoreClass.updatePostOnFireStore(requireActivity(), userID,
+                                postHashMap, postToBeUpdated.postID)
+                            // TODO: add onComplete: (Boolean) -> Unit
+                            visiblePosts.add(postToBeUpdated)
+                            Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
+                        }else{
+                            Log.d("list of posts to be updated is:", "$postsToUpdate")
+                            val batchUpdates = mutableMapOf<String, Map<String, Any>>()
+                            for (eachPost in postsToUpdate) {
+                                val postHashMap = HashMap<String, Any>()
+                                postHashMap["visibility"] = true
+                                postHashMap["timeCreatedMillis"] = secondsNow
+                                batchUpdates[eachPost.postID] = postHashMap
+                            }
+                            fireStoreClass.batchUpdatePostsOnFireStore(requireActivity(), userID,
+                                batchUpdates) { successfully ->
+                                if (successfully) {
+                                    //for (p in postsToUpdate){
+                                    //    visiblePosts.add(p)
+                                    //}
+                                    visiblePosts.addAll(postsToUpdate)
+                                    Log.d("visible posts after adding list of posts for update:", "$visiblePosts")
+                                }else{
+                                    Log.d("batchUpdate failed", "error while updating multiple posts on fireStore")
+                                }
+                            }
                         }
-                        visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-                        Log.d("final visible posts are:", "$visiblePosts")
-                        homeViewModel.updatePosts(visiblePosts)
-                        binding.ibRefresh.setImageResource(R.drawable.ic_baseline_refresh_24)
+                    }
+                    fireStoreClass.getUserInfoRealtimeListener(requireActivity(), userID) { user, successful ->
+                        if (successful && user != null){
+                            Log.d("user is:", "$user")
+                            for (i in visiblePosts){
+                                i.profilePicture = user.image
+                                i.userName = user.userName
+                            }
+                            visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
+                            Log.d("final visible posts are:", "$visiblePosts")
+                            homeViewModel.updatePosts(visiblePosts)
+                            if (_binding != null){
+                                binding.ibRefresh.setImageResource(R.drawable.ic_baseline_refresh_24)
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
+    /*
+
+    coroutineScope.launch {
+                    if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis){
+                        lastRequestTimeMillis = System.currentTimeMillis()
+                        getTimeNow()
+                        Log.d("getTimeCalled", "date: $dateNow sec: $secondsNow")
+                        if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
+                            for (post in posts){
+                                if (!post.visibility){
+                                    if (secondsNow.toLong() >= post.timeToShare.toLong()) {
+                                        postsToUpdate.add(post)
+                                        Log.d("posts to update are:", "$postsToUpdate")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+     */
 
 
     private suspend fun getTimeNow(){
-        firstRequestTimeMillis = System.currentTimeMillis()
         dateAndTimePair = getTime?.getCurrentTimeAndDate()
         if (dateAndTimePair != null){
             if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
@@ -208,12 +242,42 @@ class HomeFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        Log.d("onDestroyView called", "")
         _binding = null
         fireStoreClass.removePostsSnapshotListener()
+        fireStoreClass.removeUsersSnapshotListener()
+        coroutineScope.cancel()
     }
+
+    /*
+    override fun onDestroy() {
+        super.onDestroy()
+        fireStoreClass.removePostsSnapshotListener()
+        coroutineScope.cancel()
+    }
+
+     */
+
+    override fun onPause() {
+        super.onPause()
+        Log.d("onPause called", "")
+        fireStoreClass.removePostsSnapshotListener()
+        fireStoreClass.removeUsersSnapshotListener()
+        coroutineScope.cancel()
+    }
+
+
 
     override fun onResume() {
         super.onResume()
-        loadPosts()
+        Log.d("onResume called", "")
+        fireStoreClass = FireStoreClass()
+        getTime = GetTime()
+        coroutineScope = CoroutineScope(Dispatchers.Main)
+        //loadPosts()
     }
+
+
+
+
 }

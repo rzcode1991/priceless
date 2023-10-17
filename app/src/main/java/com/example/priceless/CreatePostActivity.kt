@@ -61,7 +61,8 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         getTime = GetTime()
 
         showProgressDialog()
-        FireStoreClass().getUserInfoFromFireStore(this)
+        val userID = FireStoreClass().getUserID()
+        FireStoreClass().getUserInfoFromFireStore(this, userID)
 
         tvSendPost.setOnClickListener(this@CreatePostActivity)
         ivPostImage.setOnClickListener(this@CreatePostActivity)
@@ -165,7 +166,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                             try {
                                 showDatePickerDialog()
                             } catch (e: Exception) {
-                                Log.d("err calling createPost", e.message.toString())
+                                Log.d("err showing DatePickerDialog", e.message.toString())
                             }
                         }
                     }

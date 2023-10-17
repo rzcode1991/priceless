@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -13,7 +14,7 @@ import com.google.firebase.ktx.Firebase
 class ForgetPasswordActivity : BaseActivity() {
 
     private lateinit var toolbarForgetPass: Toolbar
-    private lateinit var etEmail: EditText
+    private lateinit var etEmail: TextInputEditText
     private lateinit var btnResetPass: Button
     private lateinit var auth: FirebaseAuth
 

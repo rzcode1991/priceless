@@ -260,7 +260,8 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             postHashMap["timeCreatedMillis"] = newTimeCreatedMillis
             //postHashMap["timeCreatedToShow"] = newTimeCreatedToShow
             postHashMap["edited"] = true
-            FireStoreClass().updatePostOnFireStore(this@EditPostActivity, postHashMap, postID)
+            val userID = post.userId
+            FireStoreClass().updatePostOnFireStore(this@EditPostActivity, userID, postHashMap, postID)
         }
     }
 

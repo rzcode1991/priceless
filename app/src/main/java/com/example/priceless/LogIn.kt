@@ -11,14 +11,15 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
 class LogIn : BaseActivity(), OnClickListener {
 
-    private lateinit var etEmail: EditText
-    private lateinit var etPassword: EditText
+    private lateinit var etEmail: TextInputEditText
+    private lateinit var etPassword: TextInputEditText
     private lateinit var tvForgetPassWord: TextView
     private lateinit var btnLogIn: Button
     private lateinit var btnSignUp: Button
@@ -67,7 +68,8 @@ class LogIn : BaseActivity(), OnClickListener {
             auth.signInWithEmailAndPassword(email, password).
             addOnCompleteListener(this) { task ->
                 if (task.isSuccessful){
-                    FireStoreClass().getUserInfoFromFireStore(this@LogIn)
+                    val userID = FireStoreClass().getUserID()
+                    FireStoreClass().getUserInfoFromFireStore(this@LogIn, userID)
                 }else{
                     hideProgressDialog()
                     showErrorSnackBar(task.exception?.message.toString(), true)
@@ -100,11 +102,11 @@ class LogIn : BaseActivity(), OnClickListener {
         if (user.profileCompleted == 0){
             Toast.makeText(this, "please complete your profile", Toast.LENGTH_LONG).show()
             val intent = Intent(this@LogIn, ProfileActivity::class.java)
-            intent.putExtra(Constants.User_Extra_Details, user)
+            //intent.putExtra(Constants.User_Extra_Details, user)
             startActivity(intent)
         }else{
             val intent = Intent(this@LogIn, FragmentActivity::class.java)
-            intent.putExtra(Constants.User_Extra_Details, user)
+            //intent.putExtra(Constants.User_Extra_Details, user)
             startActivity(intent)
         }
         finish()

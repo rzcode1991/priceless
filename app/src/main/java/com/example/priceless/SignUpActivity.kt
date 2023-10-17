@@ -5,6 +5,7 @@ import android.text.TextUtils
 import android.util.Log
 import android.widget.*
 import androidx.appcompat.widget.Toolbar
+import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.SetOptions
@@ -13,12 +14,12 @@ import com.google.firebase.ktx.Firebase
 class SignUpActivity : BaseActivity() {
 
     private lateinit var toolbarSignUp: Toolbar
-    private lateinit var etUserName: EditText
-    private lateinit var etFirstName: EditText
-    private lateinit var etLastName: EditText
-    private lateinit var etEmail: EditText
-    private lateinit var etPassword: EditText
-    private lateinit var etConfirmPassword: EditText
+    private lateinit var etUserName: TextInputEditText
+    private lateinit var etFirstName: TextInputEditText
+    private lateinit var etLastName: TextInputEditText
+    private lateinit var etEmail: TextInputEditText
+    private lateinit var etPassword: TextInputEditText
+    private lateinit var etConfirmPassword: TextInputEditText
     private lateinit var checkBox: CheckBox
     private lateinit var tvTerms: TextView
     private lateinit var btnSignUp: Button
@@ -69,7 +70,7 @@ class SignUpActivity : BaseActivity() {
     }
 
     private fun validateUserInput(callback: (Boolean) -> Unit) {
-        val userName = etUserName.text.toString().trim { it <= ' ' }
+        val userName = etUserName.text.toString().lowercase().trim { it <= ' ' }
         val firstName = etFirstName.text.toString().trim { it <= ' ' }
         val lastName = etLastName.text.toString().trim { it <= ' ' }
         val email = etEmail.text.toString().trim { it <= ' ' }
@@ -138,7 +139,7 @@ class SignUpActivity : BaseActivity() {
                         val firebaseUser = auth.currentUser!!
                         val user = User(
                             firebaseUser.uid,
-                            etUserName.text.toString(),
+                            etUserName.text.toString().lowercase().trim { it <= ' ' },
                             etFirstName.text.toString(),
                             etLastName.text.toString(),
                             etEmail.text.toString()

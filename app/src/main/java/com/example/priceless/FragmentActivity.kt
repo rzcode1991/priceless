@@ -17,7 +17,7 @@ class FragmentActivity : BaseActivity() {
 
     private lateinit var binding: ActivityFragmentBinding
     private lateinit var homeViewModel: HomeViewModel
-    private lateinit var fireStoreClass: FireStoreClass
+    //private lateinit var fireStoreClass: FireStoreClass
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +38,7 @@ class FragmentActivity : BaseActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-        fireStoreClass = FireStoreClass()
+        //fireStoreClass = FireStoreClass()
         homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
 
         //fireStoreClass.getUserInfoFromFireStore(this)
