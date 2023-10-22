@@ -137,10 +137,12 @@ class HomeFragment : Fragment() {
                             postHashMap["visibility"] = true
                             postHashMap["timeCreatedMillis"] = secondsNow
                             fireStoreClass.updatePostOnFireStore(requireActivity(), userID,
-                                postHashMap, postToBeUpdated.postID)
-                            // TODO: add onComplete: (Boolean) -> Unit
-                            visiblePosts.add(postToBeUpdated)
-                            Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
+                                postHashMap, postToBeUpdated.postID) { onComplete ->
+                                if (onComplete){
+                                    visiblePosts.add(postToBeUpdated)
+                                    Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
+                                }
+                            }
                         }else{
                             Log.d("list of posts to be updated is:", "$postsToUpdate")
                             val batchUpdates = mutableMapOf<String, Map<String, Any>>()

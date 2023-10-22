@@ -8,6 +8,7 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.VISIBLE
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -40,7 +41,6 @@ class SearchActivity : BaseActivity(), OnClickListener {
     private var dateAndTimePair: Pair<String?, String?>? = null
     private var dateNow: String = ""
     private var secondsNow: String = ""
-    private lateinit var followRequest: FollowRequest
     private lateinit var currentUserID: String
     private var followSituation = ""
 
@@ -82,12 +82,13 @@ class SearchActivity : BaseActivity(), OnClickListener {
         toolbarSearch.setNavigationOnClickListener { onBackPressed() }
     }
 
+
     override fun onClick(v: View?) {
         if (v != null){
             when(v.id){
-                R.id.btn_search_username ->{
+                R.id.btn_search_username -> {
                     val userName = etSearchUserName.text.toString().lowercase().trim { it <= ' ' }
-                    if (userName.isNotEmpty()){
+                    if (validUserNameInput()){
                         showProgressDialog()
                         FireStoreClass().getUserIDByUsername(userName) { uID ->
                             if (uID != null) {
@@ -102,21 +103,71 @@ class SearchActivity : BaseActivity(), OnClickListener {
                                 recyclerView.visibility = View.GONE
                             }
                         }
-                    }else{
-                        showErrorSnackBar("Please Enter UserName", true)
                     }
                 }
                 R.id.btn_follow_searched -> {
                     if (btnFollow.visibility == VISIBLE){
                         when(btnFollow.text){
-                            "following" -> {
-                                // tap to unfollow, on success we call check follow situation
+                            "Following" -> {
+                                val builder = AlertDialog.Builder(this)
+                                builder.setTitle("Unfollow User?")
+                                builder.setMessage("You Are Following This User, Do You Wanna Unfollow?")
+                                builder.setIcon(R.drawable.ic_round_warning_24)
+                                builder.setPositiveButton("Yes") { dialog, _ ->
+                                    showProgressDialog()
+                                    FireStoreClass().unfollowUser(currentUserID, userID) { success ->
+                                        if (success){
+                                            FireStoreClass().deleteFollowRequest(this,
+                                                currentUserID, userID) { successfully ->
+                                                if (successfully){
+                                                    hideProgressDialog()
+                                                    checkFollowSituation()
+                                                    Toast.makeText(this, "You Are Not Following This User Anymore", Toast.LENGTH_LONG).show()
+                                                }else{
+                                                    hideProgressDialog()
+                                                    showErrorSnackBar("Error While Unfollowing User", true)
+                                                }
+                                            }
+                                        }else{
+                                            hideProgressDialog()
+                                            showErrorSnackBar("Error While Unfollowing User", true)
+                                        }
+                                    }
+                                    dialog.dismiss()
+                                }
+                                builder.setNeutralButton("No") {dialog, _ ->
+                                    dialog.dismiss()
+                                }
+                                builder.setCancelable(false)
+                                builder.create().show()
                             }
-                            "pending" -> {
-                                // tap to remove follow request, on success we call check follow situation
+                            "Pending" -> {
+                                val builder = AlertDialog.Builder(this)
+                                builder.setTitle("Cancel Request?")
+                                builder.setMessage("Your Request Is Waiting, " +
+                                        "Do You Wanna Cancel It?")
+                                builder.setIcon(R.drawable.ic_round_warning_24)
+                                builder.setPositiveButton("Yes") { dialog, _ ->
+                                    showProgressDialog()
+                                    FireStoreClass().deleteFollowRequest(this, currentUserID,
+                                        userID) { successful ->
+                                        if (successful){
+                                            hideProgressDialog()
+                                            checkFollowSituation()
+                                            Toast.makeText(this, "Follow Request Deleted", Toast.LENGTH_LONG).show()
+                                        }else{
+                                            hideProgressDialog()
+                                        }
+                                    }
+                                    dialog.dismiss()
+                                }
+                                builder.setNeutralButton("No") {dialog, _ ->
+                                    dialog.dismiss()
+                                }
+                                builder.setCancelable(false)
+                                builder.create().show()
                             }
-                            "follow" -> {
-                                // tap to create a new follow request, on success we call check follow situation
+                            "Follow" -> {
                                 createNewFollowRequest()
                             }
                         }
@@ -178,20 +229,18 @@ class SearchActivity : BaseActivity(), OnClickListener {
 
 
     private fun checkFollowSituation(){
-        showProgressDialog()
         FireStoreClass().checkFollowSituation(currentUserID, userID) { situation ->
-            hideProgressDialog()
             if (situation.isNotEmpty()){
                 btnFollow.setOnClickListener(this)
                 when(situation){
                     "following" -> {
-                        btnFollow.text = "following"
+                        btnFollow.text = "Following"
                     }
                     "pending" -> {
-                        btnFollow.text = "pending"
+                        btnFollow.text = "Pending"
                     }
                     "follow" -> {
-                        btnFollow.text = "follow"
+                        btnFollow.text = "Follow"
                     }
                 }
             }else{
@@ -203,23 +252,16 @@ class SearchActivity : BaseActivity(), OnClickListener {
 
 
     private fun createNewFollowRequest(){
-        FireStoreClass().getUsernameByUserID(currentUserID) { senderUserName ->
-            if (senderUserName != null){
-                val receiverUserID = userID
-                val receiverUserName = userInfo.userName
-                followRequest = FollowRequest(currentUserID, senderUserName, receiverUserID,
-                    receiverUserName, false)
-                showProgressDialog()
-                FireStoreClass().createFollowRequest(this, followRequest)
-            }
-        }
+        val receiverUserID = userID
+        val followRequest = FollowRequest(currentUserID, receiverUserID, false)
+        showProgressDialog()
+        FireStoreClass().createFollowRequest(this, followRequest)
     }
 
 
     fun createFollowRequestSuccessful(request: FollowRequest){
         hideProgressDialog()
         showErrorSnackBar("Your Request Was Sent Successfully", false)
-        //btnFollow.text = "Pending"
         checkFollowSituation()
     }
 
@@ -259,10 +301,14 @@ class SearchActivity : BaseActivity(), OnClickListener {
                             postHashMap["visibility"] = true
                             postHashMap["timeCreatedMillis"] = secondsNow
                             FireStoreClass().updatePostOnFireStore(this@SearchActivity,
-                                userID, postHashMap, postToBeUpdated.postID)
-                            // TODO: add onComplete: (Boolean) -> Unit
-                            visiblePosts.add(postToBeUpdated)
-                            Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
+                                userID, postHashMap, postToBeUpdated.postID) { onComplete ->
+                                if (onComplete){
+                                    visiblePosts.add(postToBeUpdated)
+                                    Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
+                                }else{
+                                    showErrorSnackBar("failed to update future post", true)
+                                }
+                            }
                         }else{
                             Log.d("list of posts to be updated is:", "$postsToUpdate")
                             val batchUpdates = mutableMapOf<String, Map<String, Any>>()
@@ -319,5 +365,35 @@ class SearchActivity : BaseActivity(), OnClickListener {
             }
         }
     }
+
+
+    fun deleteFollowRequestSuccessful(){
+        hideProgressDialog()
+        checkFollowSituation()
+        Toast.makeText(this, "Follow Request Deleted", Toast.LENGTH_LONG).show()
+    }
+
+
+    private fun validUserNameInput(): Boolean{
+        val userName = etSearchUserName.text.toString().lowercase().trim { it <= ' ' }
+        val allowedRegexForUserName = Regex("^[a-z0-9_-]*$")
+        val disallowedPattern = Regex("[\\[\\]#/<\\\\>]")
+        return if (userName.isEmpty()){
+            showErrorSnackBar("Please Enter UserName", true)
+            false
+        }else if (disallowedPattern.containsMatchIn(userName)){
+            showErrorSnackBar("UserName Is Not Valid", true)
+            false
+        }else if (!userName.matches(allowedRegexForUserName)){
+            showErrorSnackBar("UserName Is Not Valid", true)
+            false
+        }else if (userName.length !in 3..20){
+            showErrorSnackBar("UserName Is Not Valid", true)
+            false
+        }else{
+            true
+        }
+    }
+
 
 }

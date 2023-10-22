@@ -208,11 +208,16 @@ class EditPostActivity : BaseActivity(), OnClickListener {
 
 
     private fun validateUserInput(): Boolean{
-        return if (TextUtils.isEmpty(etPostText.text.toString())){
-            showErrorSnackBar("please enter text", true)
+        val postText = etPostText.text.toString()
+        val disallowedPattern = Regex("[\\[\\]#/<\\\\>]")
+        return if (TextUtils.isEmpty(postText)){
+            showErrorSnackBar("please Enter Text", true)
+            false
+        }else if(disallowedPattern.containsMatchIn(postText)){
+            showErrorSnackBar("You Cant Use These Characters: \\[]<>#/ In Post Text.", true)
             false
         }else if (post.postText == etPostText.text.toString() && imageURI == null){
-            showErrorSnackBar("you did not change anything", true)
+            showErrorSnackBar("You Did Not Change Anything", true)
             false
         }else{
             true
@@ -261,7 +266,15 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             //postHashMap["timeCreatedToShow"] = newTimeCreatedToShow
             postHashMap["edited"] = true
             val userID = post.userId
-            FireStoreClass().updatePostOnFireStore(this@EditPostActivity, userID, postHashMap, postID)
+            FireStoreClass().updatePostOnFireStore(this@EditPostActivity, userID, postHashMap,
+                postID) { onComplete ->
+                if (onComplete){
+                    updatePostOnFireStoreSuccess()
+                }else{
+                    hideProgressDialog()
+                    showErrorSnackBar("update post on fire store failed", true)
+                }
+            }
         }
     }
 
@@ -276,7 +289,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         }
     }
 
-    fun updatePostOnFireStoreSuccess(){
+    private fun updatePostOnFireStoreSuccess(){
         val sortedPosts = Constants.sortedPosts
         sortedPosts.remove(post.timeCreatedMillis)
         // assuming that only visible posts are editable

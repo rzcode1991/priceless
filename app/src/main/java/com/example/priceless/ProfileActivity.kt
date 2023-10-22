@@ -174,21 +174,67 @@ class ProfileActivity : BaseActivity(), OnClickListener {
 
 
     private fun validateUserInput(callback: (Boolean) -> Unit){
+        val userName = etUserName.text.toString().lowercase().trim { it <= ' ' }
+        val firstName = etFirstName.text.toString().trim { it <= ' ' }
+        val lastName = etLastName.text.toString().trim { it <= ' ' }
+        val phoneNumber = etPhoneNumber.text.toString().trim { it <= ' ' }
+        val reservedUsernames = listOf("admin", "priceless", "root", "moderator", "support", "official",
+            "anonymous", "system", "bot", "test", "report", "feedback", "contact", "help", "terms",
+            "privacy", "security", "register", "login", "logout", "signup", "settings", "profile",
+            "account", "user", "users", "blocked", "banned", "spam", "feedback", "master", "invalid",
+            "invalidusername", "unavailable", "service", "error", "server", "blockeduser", "guest")
+        val allowedRegexForUserName = Regex("^[a-z0-9_-]*$")
+        val allowedRegexForName = Regex("^[a-zA-Z0-9_-]*$")
         when{
-            TextUtils.isEmpty(etPhoneNumber.text.toString().trim { it <= ' ' }) -> {
+            TextUtils.isEmpty(phoneNumber) -> {
                 showErrorSnackBar("Please Enter Phone Number", true)
                 callback(false)
             }
-            TextUtils.isEmpty(etUserName.text.toString().lowercase().trim { it <= ' ' }) -> {
+            phoneNumber.length > 30 -> {
+                showErrorSnackBar("Phone Number Too Long", true)
+                callback(false)
+            }
+            TextUtils.isEmpty(userName) -> {
                 showErrorSnackBar("Please Enter User Name", true)
                 callback(false)
             }
-            TextUtils.isEmpty(etFirstName.text.toString().trim { it <= ' ' }) -> {
+            userName.length !in 3..20 -> {
+                showErrorSnackBar("User Name Should Be At Least 3 And Max 20 Characters", true)
+                callback(false)
+            }
+            !userName.matches(allowedRegexForUserName) -> {
+                showErrorSnackBar("Allowed Characters For UserName Are: letters (a-z), numbers (0-9), " +
+                        "underscores (_), and hyphens (-)", true)
+                callback(false)
+            }
+            userName in reservedUsernames -> {
+                showErrorSnackBar("User Name Is Already Taken", true)
+                callback(false)
+            }
+            TextUtils.isEmpty(firstName) -> {
                 showErrorSnackBar("Please Enter First Name", true)
                 callback(false)
             }
-            TextUtils.isEmpty(etLastName.text.toString().trim { it <= ' ' }) -> {
+            firstName.length > 30 -> {
+                showErrorSnackBar("First Name Too Long", true)
+                callback(false)
+            }
+            !firstName.matches(allowedRegexForName) -> {
+                showErrorSnackBar("Allowed Characters For FirstName Are: letters (a-z),(A-Z) numbers (0-9), " +
+                        "underscores (_), and hyphens (-)", true)
+                callback(false)
+            }
+            TextUtils.isEmpty(lastName) -> {
                 showErrorSnackBar("Please Enter Last Name", true)
+                callback(false)
+            }
+            lastName.length > 30 -> {
+                showErrorSnackBar("Last Name Too Long", true)
+                callback(false)
+            }
+            !lastName.matches(allowedRegexForName) -> {
+                showErrorSnackBar("Allowed Characters For LastName Are: letters (a-z),(A-Z) numbers (0-9), " +
+                        "underscores (_), and hyphens (-)", true)
                 callback(false)
             }
             else -> {

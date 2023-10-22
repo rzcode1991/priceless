@@ -232,14 +232,24 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     }
 
 
-    private fun validateUserInput(): Boolean{
-        return if (TextUtils.isEmpty(etPostText.text.toString())){
-            showErrorSnackBar("please enter text", true)
-            false
-        }else{
-            true
+    private fun validateUserInput(): Boolean {
+        val postText = etPostText.text.toString()
+
+        if (TextUtils.isEmpty(postText)) {
+            showErrorSnackBar("Please Enter Text", true)
+            return false
         }
+
+        val disallowedPattern = Regex("[\\[\\]#/<\\\\>]")
+
+        if (disallowedPattern.containsMatchIn(postText)) {
+            showErrorSnackBar("You Cant Use These Characters: \\[]<>#/ In Post Text.", true)
+            return false
+        }
+
+        return true
     }
+
 
 
     fun uploadImageOnCloudSuccess(imageUrl: String){

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="2dp"
+            android:gravity="start|center"
+            android:orientation="horizontal"
+            android:padding="8dp">
+
+            <ImageView
+                android:id="@+id/iv_profile_pic_request"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginEnd="4dp"
+                android:src="@drawable/ic_baseline_account_circle_24" />
+
+            <TextView
+                android:id="@+id/tv_request"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:text=""
+                android:textColor="@color/colorPrimaryText"
+                android:textSize="20sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_action_request"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="visible">
+
+            <Button
+                android:id="@+id/btn_accept_request"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/white"
+                android:text="Accept"
+                android:textAllCaps="false"
+                android:textColor="@color/black" />
+
+            <Button
+                android:id="@+id/btn_reject_request"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/white"
+                android:text="Reject"
+                android:textAllCaps="false"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
