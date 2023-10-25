@@ -104,7 +104,7 @@ class HomeFragment : Fragment() {
             binding.ibRefresh.setImageResource(R.drawable.ic_baseline_downloading_24)
         }
         val userID = fireStoreClass.getUserID()
-        fireStoreClass.getPostsRealTimeListener(requireActivity(), userID) { posts, success ->
+        fireStoreClass.getPostsRealTimeListener(userID) { posts, success ->
             if (success && posts != null && posts.isNotEmpty()){
                 Log.d("posts beginning are:", "$posts")
                 val visiblePosts = ArrayList(posts.filter { it.visibility })
@@ -166,12 +166,12 @@ class HomeFragment : Fragment() {
                             }
                         }
                     }
-                    fireStoreClass.getUserInfoRealtimeListener(requireActivity(), userID) { user, successful ->
-                        if (successful && user != null){
-                            Log.d("user is:", "$user")
+                    fireStoreClass.getUserInfoWithCallback(userID) { userInfo ->
+                        if (userInfo != null){
+                            Log.d("user is:", "$userInfo")
                             for (i in visiblePosts){
-                                i.profilePicture = user.image
-                                i.userName = user.userName
+                                i.profilePicture = userInfo.image
+                                i.userName = userInfo.userName
                             }
                             visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
                             Log.d("final visible posts are:", "$visiblePosts")
@@ -185,28 +185,6 @@ class HomeFragment : Fragment() {
             }
         }
     }
-
-    /*
-
-    coroutineScope.launch {
-                    if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis){
-                        lastRequestTimeMillis = System.currentTimeMillis()
-                        getTimeNow()
-                        Log.d("getTimeCalled", "date: $dateNow sec: $secondsNow")
-                        if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
-                            for (post in posts){
-                                if (!post.visibility){
-                                    if (secondsNow.toLong() >= post.timeToShare.toLong()) {
-                                        postsToUpdate.add(post)
-                                        Log.d("posts to update are:", "$postsToUpdate")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-     */
 
 
     private suspend fun getTimeNow(){

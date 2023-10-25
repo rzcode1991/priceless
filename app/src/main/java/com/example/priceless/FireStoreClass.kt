@@ -24,18 +24,7 @@ class FireStoreClass {
     private val mFireStore: FirebaseFirestore = FirebaseFirestore.getInstance()
     private var postsListenerRegistration: ListenerRegistration? = null
     private var userListenerRegistration: ListenerRegistration? = null
-    private lateinit var progressDialog: Dialog
-    fun showProgressDialog(){
-        progressDialog = Dialog(Activity())
-        progressDialog.setContentView(R.layout.progress_dialog)
-        progressDialog.setCancelable(false)
-        progressDialog.setCanceledOnTouchOutside(false)
-        progressDialog.show()
-    }
 
-    fun hideProgressDialog(){
-        progressDialog.dismiss()
-    }
 
     fun registerUserInFireStore(activity: SignUpActivity, userInfo: User){
         mFireStore.collection(Constants.USERS)
@@ -53,37 +42,53 @@ class FireStoreClass {
     }
 
 
+    fun amIFollowingThatUser(currentUserID: String, otherUserID: String, callback: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(currentUserID)
+            .collection("following")
+            .document(otherUserID)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()){
+                    callback(true)
+                }else{
+                    callback(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(false)
+                Log.e("err checking if I follow that user", e.message.toString(), e)
+            }
+    }
+
+
     fun acceptFollowRequest(receiverUserID: String, senderUserID: String, callback: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
             .document(receiverUserID)
             .collection("followers")
             .document(senderUserID)
-            .set(senderUserID)
+            .set(mapOf("userID" to senderUserID))
             .addOnSuccessListener {
                 mFireStore.collection(Constants.USERS)
                     .document(senderUserID)
                     .collection("following")
                     .document(receiverUserID)
-                    .set(receiverUserID)
+                    .set(mapOf("userID" to receiverUserID))
                     .addOnSuccessListener {
                         updateFollowRequest(receiverUserID, senderUserID){ success ->
                             if (success){
-                                hideProgressDialog()
                                 callback(true)
                             }else{
-                                hideProgressDialog()
                                 callback(false)
                             }
                         }
                     }
                     .addOnFailureListener { e ->
-                        hideProgressDialog()
                         callback(false)
                         Log.e("err adding new following user", e.message.toString(), e)
                     }
             }
             .addOnFailureListener { e ->
-                hideProgressDialog()
                 callback(false)
                 Log.e("err adding new follower", e.message.toString(), e)
             }
@@ -118,7 +123,24 @@ class FireStoreClass {
 
 
     fun getReceivedRequests(userID: String, callback: (ArrayList<FollowRequest>?) -> Unit){
+        val requests = ArrayList<FollowRequest>()
         mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection("receivedRequests")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                for (document in snapshot.documents) {
+                    val request = document.toObject(FollowRequest::class.java)
+                    if (request != null) {
+                        requests.add(request)
+                    }
+                }
+                callback(requests)
+            }
+            .addOnFailureListener { e ->
+                callback(null)
+                Log.e("err getting received requests", e.message.toString(), e)
+            }
     }
 
 
@@ -195,7 +217,7 @@ class FireStoreClass {
     }
 
 
-    fun deleteFollowRequest(activity: Activity, currentUserID: String, otherUserID: String, callback: (Boolean) -> Unit){
+    fun deleteFollowRequest(currentUserID: String, otherUserID: String, callback: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
             .document(otherUserID)
             .collection("receivedRequests")
@@ -211,22 +233,12 @@ class FireStoreClass {
                         callback(true)
                     }
                     .addOnFailureListener { e ->
-                        when(activity){
-                            is SearchActivity -> {
-                                callback(false)
-                                activity.showErrorSnackBar(e.message.toString(), true)
-                            }
-                        }
+                        callback(false)
                         Log.e("deleting followRequest failed", "error while deleting followRequest", e)
                     }
             }
             .addOnFailureListener { e ->
-                when(activity){
-                    is SearchActivity -> {
-                        callback(false)
-                        activity.showErrorSnackBar(e.message.toString(), true)
-                    }
-                }
+                callback(false)
                 Log.e("deleting followRequest failed", "error while deleting followRequest", e)
             }
     }
@@ -234,9 +246,9 @@ class FireStoreClass {
 
     fun checkFollowSituation(currentUserID: String, otherUserID: String, situation: (String) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(otherUserID)
-            .collection("receivedRequests")
             .document(currentUserID)
+            .collection("sentRequests")
+            .document(otherUserID)
             //.whereEqualTo("senderUserID", currentUserID)
             .get()
             .addOnSuccessListener { document ->
@@ -249,6 +261,31 @@ class FireStoreClass {
                 }else{
                     // there is no request between two users
                     situation("follow")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.e("checkFollowSituation Err", "Error while checking follow situation", e)
+                situation("")
+            }
+    }
+
+
+    fun checkOtherUserFollowSituation(currentUserID: String, otherUserID: String, situation: (String) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(currentUserID)
+            .collection("receivedRequests")
+            .document(otherUserID)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()){
+                    if (document.get("accepted") as Boolean){
+                        situation("FollowsYou")
+                    }else{
+                        situation("Pending")
+                    }
+                }else{
+                    // there is no request between two users
+                    situation("IsNotFollowing")
                 }
             }
             .addOnFailureListener { e ->
@@ -473,6 +510,21 @@ class FireStoreClass {
     }
 
 
+    fun getUserInfoWithCallback(userID: String, callback: (User?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .get()
+            .addOnSuccessListener { document ->
+                val user = document.toObject(User::class.java)!!
+                callback(user)
+            }
+            .addOnFailureListener { e ->
+                callback(null)
+                Log.e("err getting user info with callback", e.message.toString(), e)
+            }
+    }
+
+
     fun getUserInfoFromFireStore(activity: Activity, userID: String){
         mFireStore.collection(Constants.USERS)
             .document(userID)
@@ -525,6 +577,7 @@ class FireStoreClass {
     }
 
 
+    /*
     fun getUserInfoRealtimeListener(activity: Activity, userID: String, listener: (User?, Boolean) -> Unit) {
         userListenerRegistration = mFireStore.collection(Constants.USERS)
             .document(userID)
@@ -542,15 +595,17 @@ class FireStoreClass {
             }
     }
 
+     */
 
 
-    fun getPostsRealTimeListener(activity: Activity, userID: String, listener: (ArrayList<PostStructure>?, Boolean) -> Unit) {
+
+    fun getPostsRealTimeListener(userID: String, listener: (ArrayList<PostStructure>?, Boolean) -> Unit) {
         postsListenerRegistration = mFireStore.collection(Constants.USERS)
             .document(userID)
             .collection(Constants.Posts)
             .addSnapshotListener { snapshot, e ->
                 if (e != null) {
-                    Log.e(activity.javaClass.simpleName, "Error listening to user info", e)
+                    Log.e("Error listening to posts", "Error listening to posts", e)
                     listener(null, false)
                     return@addSnapshotListener
                 }

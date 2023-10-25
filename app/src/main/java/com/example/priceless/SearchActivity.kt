@@ -43,6 +43,12 @@ class SearchActivity : BaseActivity(), OnClickListener {
     private var secondsNow: String = ""
     private lateinit var currentUserID: String
     private var followSituation = ""
+    private lateinit var layoutOtherUser: LinearLayout
+    private lateinit var tvOtherUserFollowsYou: TextView
+    private lateinit var btnStopOtherUser: Button
+    private lateinit var layoutActionRequest: LinearLayout
+    private lateinit var btnAcceptRequest: Button
+    private lateinit var btnRejectRequest: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +68,12 @@ class SearchActivity : BaseActivity(), OnClickListener {
         coroutineScope = CoroutineScope(Dispatchers.Main)
         getTime = GetTime()
         recyclerView = findViewById(R.id.recycler_view_searched_user)
+        layoutOtherUser = findViewById(R.id.layout_other_user)
+        tvOtherUserFollowsYou = findViewById(R.id.tv_other_user_follows_you)
+        btnStopOtherUser = findViewById(R.id.btn_stop_other_user)
+        layoutActionRequest = findViewById(R.id.layout_action_request_search)
+        btnAcceptRequest = findViewById(R.id.btn_accept_request_search)
+        btnRejectRequest = findViewById(R.id.btn_reject_request_search)
 
         setActionBar()
 
@@ -117,11 +129,22 @@ class SearchActivity : BaseActivity(), OnClickListener {
                                     showProgressDialog()
                                     FireStoreClass().unfollowUser(currentUserID, userID) { success ->
                                         if (success){
-                                            FireStoreClass().deleteFollowRequest(this,
-                                                currentUserID, userID) { successfully ->
+                                            FireStoreClass().deleteFollowRequest(currentUserID,
+                                                userID) { successfully ->
                                                 if (successfully){
-                                                    hideProgressDialog()
                                                     checkFollowSituation()
+                                                    hideProgressDialog()
+                                                    if (userInfo.publicProfile){
+                                                        layoutFirstLastName.visibility = VISIBLE
+                                                        tvFirstName.text = "first name: ${userInfo.firstName}"
+                                                        tvLastName.text = "last name: ${userInfo.lastName}"
+                                                        recyclerView.visibility = VISIBLE
+                                                        tvPrivate.visibility = View.GONE
+                                                    }else{
+                                                        layoutFirstLastName.visibility = View.GONE
+                                                        recyclerView.visibility = View.GONE
+                                                        tvPrivate.visibility = VISIBLE
+                                                    }
                                                     Toast.makeText(this, "You Are Not Following This User Anymore", Toast.LENGTH_LONG).show()
                                                 }else{
                                                     hideProgressDialog()
@@ -149,11 +172,11 @@ class SearchActivity : BaseActivity(), OnClickListener {
                                 builder.setIcon(R.drawable.ic_round_warning_24)
                                 builder.setPositiveButton("Yes") { dialog, _ ->
                                     showProgressDialog()
-                                    FireStoreClass().deleteFollowRequest(this, currentUserID,
+                                    FireStoreClass().deleteFollowRequest(currentUserID,
                                         userID) { successful ->
                                         if (successful){
-                                            hideProgressDialog()
                                             checkFollowSituation()
+                                            hideProgressDialog()
                                             Toast.makeText(this, "Follow Request Deleted", Toast.LENGTH_LONG).show()
                                         }else{
                                             hideProgressDialog()
@@ -188,12 +211,13 @@ class SearchActivity : BaseActivity(), OnClickListener {
     private fun setUserInfo(){
         showProgressDialog()
         FireStoreClass().getCurrentUserID { currentUID ->
-            hideProgressDialog()
+            //hideProgressDialog()
             if (currentUID.isNotEmpty()){
                 currentUserID = currentUID
                 layoutUserInfo.visibility = VISIBLE
-                btnFollow.visibility = VISIBLE
                 checkFollowSituation()
+                hideProgressDialog()
+                checkOtherUserFollowSituation()
                 tvUserName.text = userInfo.userName
                 if (userInfo.image.isNotEmpty()){
                     GlideLoader(this).loadImageUri(userInfo.image, ivProfilePic)
@@ -205,7 +229,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
                 }else{
                     GlideLoader(this).loadImageUri(R.drawable.ic_baseline_account_circle_24, ivProfilePic)
                     ivProfilePic.setOnClickListener {
-                        Toast.makeText(this, "this user does not have profile picture", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "This User Does Not Have Profile Picture", Toast.LENGTH_LONG).show()
                     }
                 }
                 if (userInfo.publicProfile){
@@ -213,16 +237,119 @@ class SearchActivity : BaseActivity(), OnClickListener {
                     tvFirstName.text = "first name: ${userInfo.firstName}"
                     tvLastName.text = "last name: ${userInfo.lastName}"
                     tvPrivate.visibility = View.GONE
-                    loadPosts()
+                    loadPosts(userID)
                 }else{
-                    //hideProgressDialog()
-                    layoutFirstLastName.visibility = View.GONE
-                    tvPrivate.visibility = VISIBLE
-                    //tvPrivate.text = "${userInfo.userName} Is A Private User."
-                    recyclerView.visibility = View.GONE
+                    FireStoreClass().amIFollowingThatUser(currentUserID, userID) { yep ->
+                        if (yep){
+                            layoutFirstLastName.visibility = VISIBLE
+                            tvFirstName.text = "first name: ${userInfo.firstName}"
+                            tvLastName.text = "last name: ${userInfo.lastName}"
+                            tvPrivate.visibility = View.GONE
+                            loadPosts(userID)
+                        }else{
+                            layoutFirstLastName.visibility = View.GONE
+                            tvPrivate.visibility = VISIBLE
+                            recyclerView.visibility = View.GONE
+                        }
+                    }
                 }
             }else{
+                hideProgressDialog()
                 showErrorSnackBar("Authentication Error", true)
+            }
+        }
+    }
+
+
+    private fun stopOtherUserFromFollowingMe(){
+        showProgressDialog()
+        // unfollow myself, so I will be considered as other user.
+        FireStoreClass().unfollowUser(userID, currentUserID) { success ->
+            if (success){
+                hideProgressDialog()
+                FireStoreClass().deleteFollowRequest(userID,
+                    currentUserID) { succeed ->
+                    if (succeed){
+                        tvOtherUserFollowsYou.text = "This User Is Not Following You."
+                        btnStopOtherUser.visibility = View.GONE
+                        layoutActionRequest.visibility = View.GONE
+                    }
+                }
+            }else{
+                hideProgressDialog()
+                showErrorSnackBar("Unfollow User Failed.", true)
+            }
+        }
+    }
+
+
+    private fun checkOtherUserFollowSituation(){
+        FireStoreClass().checkOtherUserFollowSituation(currentUserID, userID) { situation ->
+            if (situation.isNotEmpty()){
+                layoutOtherUser.visibility = VISIBLE
+                tvOtherUserFollowsYou.visibility = VISIBLE
+                when(situation){
+                    "FollowsYou" -> {
+                        // when a user is following me, means that he sent me a request and I've accepted it.
+                        tvOtherUserFollowsYou.text = "This User Is Following You."
+                        layoutActionRequest.visibility = View.GONE
+                        btnStopOtherUser.visibility = VISIBLE
+                        btnStopOtherUser.setOnClickListener {
+                            stopOtherUserFromFollowingMe()
+                        }
+                    }
+                    "Pending" -> {
+                        tvOtherUserFollowsYou.text = "This User Sent You A Follow Request."
+                        btnStopOtherUser.visibility = View.GONE
+                        layoutActionRequest.visibility = VISIBLE
+                        btnAcceptRequest.setOnClickListener {
+                            showProgressDialog()
+                            FireStoreClass().acceptFollowRequest(currentUserID, userID) { successful ->
+                                if (successful){
+                                    tvOtherUserFollowsYou.text = "This User Is Following You."
+                                    layoutActionRequest.visibility = View.GONE
+                                    btnStopOtherUser.visibility = VISIBLE
+                                    hideProgressDialog()
+                                    showErrorSnackBar("This User Started Following You.", false)
+                                    btnStopOtherUser.setOnClickListener {
+                                        stopOtherUserFromFollowingMe()
+                                    }
+                                }else{
+                                    hideProgressDialog()
+                                    showErrorSnackBar("Accept Follow Request Failed.", true)
+                                }
+                            }
+                        }
+                        btnRejectRequest.setOnClickListener {
+                            showProgressDialog()
+                            FireStoreClass().deleteFollowRequest(userID, currentUserID) { success ->
+                                if (success){
+                                    tvOtherUserFollowsYou.text = "This User Is Not Following You."
+                                    layoutActionRequest.visibility = View.GONE
+                                    btnStopOtherUser.visibility = View.GONE
+                                    hideProgressDialog()
+                                    Toast.makeText(this, "You Deleted This Follow Request.", Toast.LENGTH_LONG).show()
+                                }else{
+                                    hideProgressDialog()
+                                    showErrorSnackBar("Error While Rejecting Follow Request.", true)
+                                }
+                            }
+                        }
+                    }
+                    "IsNotFollowing" -> {
+                        tvOtherUserFollowsYou.text = "This User Is Not Following You."
+                        btnStopOtherUser.visibility = View.GONE
+                        layoutActionRequest.visibility = View.GONE
+                    }
+                }
+            }else{
+                layoutOtherUser.visibility = View.GONE
+                tvOtherUserFollowsYou.visibility = View.GONE
+                btnStopOtherUser.visibility = View.GONE
+                layoutActionRequest.visibility = View.GONE
+                btnAcceptRequest.visibility = View.GONE
+                btnRejectRequest.visibility = View.GONE
+                showErrorSnackBar("Error Getting Follow Situation From This User.", true)
             }
         }
     }
@@ -231,6 +358,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
     private fun checkFollowSituation(){
         FireStoreClass().checkFollowSituation(currentUserID, userID) { situation ->
             if (situation.isNotEmpty()){
+                btnFollow.visibility = VISIBLE
                 btnFollow.setOnClickListener(this)
                 when(situation){
                     "following" -> {
@@ -260,15 +388,15 @@ class SearchActivity : BaseActivity(), OnClickListener {
 
 
     fun createFollowRequestSuccessful(request: FollowRequest){
+        checkFollowSituation()
         hideProgressDialog()
         showErrorSnackBar("Your Request Was Sent Successfully", false)
-        checkFollowSituation()
     }
 
 
-    private fun loadPosts(){
+    private fun loadPosts(UID: String){
         showProgressDialog()
-        FireStoreClass().getPostsRealTimeListener(this, userID) { posts, success ->
+        FireStoreClass().getPostsRealTimeListener(UID) { posts, success ->
             if (success && posts != null && posts.isNotEmpty()){
                 Log.d("posts beginning are:", "$posts")
                 val visiblePosts = ArrayList(posts.filter { it.visibility })
@@ -301,7 +429,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
                             postHashMap["visibility"] = true
                             postHashMap["timeCreatedMillis"] = secondsNow
                             FireStoreClass().updatePostOnFireStore(this@SearchActivity,
-                                userID, postHashMap, postToBeUpdated.postID) { onComplete ->
+                                UID, postHashMap, postToBeUpdated.postID) { onComplete ->
                                 if (onComplete){
                                     visiblePosts.add(postToBeUpdated)
                                     Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
@@ -319,7 +447,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
                                 batchUpdates[eachPost.postID] = postHashMap
                             }
                             FireStoreClass().batchUpdatePostsOnFireStore(this@SearchActivity,
-                                userID, batchUpdates) { successfully ->
+                                UID, batchUpdates) { successfully ->
                                 if (successfully) {
                                     //for (p in postsToUpdate){
                                     //    visiblePosts.add(p)
@@ -340,7 +468,6 @@ class SearchActivity : BaseActivity(), OnClickListener {
                     visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
                     Log.d("final visible posts are:", "$visiblePosts")
                     recyclerView.visibility = VISIBLE
-                    //val currentUserID = FireStoreClass().getUserID()
                     val adapter = RecyclerviewAdapter(this@SearchActivity, visiblePosts, currentUserID)
                     adapter.notifyDataSetChanged()
                     val layoutManager = LinearLayoutManager(this@SearchActivity)

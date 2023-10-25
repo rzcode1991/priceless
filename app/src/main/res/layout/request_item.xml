@@ -12,11 +12,13 @@
         android:orientation="vertical">
 
         <LinearLayout
+            android:id="@+id/layout_user_info"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
             android:gravity="start|center"
             android:orientation="horizontal"
+            android:visibility="gone"
             android:padding="8dp">
 
             <ImageView
@@ -45,7 +47,7 @@
             android:layout_marginBottom="4dp"
             android:gravity="center"
             android:orientation="horizontal"
-            android:visibility="visible">
+            android:visibility="gone">
 
             <Button
                 android:id="@+id/btn_accept_request"

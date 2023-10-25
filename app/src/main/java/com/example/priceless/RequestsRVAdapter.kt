@@ -2,18 +2,18 @@ package com.example.priceless
 
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.recyclerview.widget.RecyclerView
 
-class RequestsRVAdapter(val context: Context, private val requestList: ArrayList<FollowRequest>,
-                        private val senderProfilePic: String, private val senderUserName: String):
+class RequestsRVAdapter(val context: Context, private val requestList: ArrayList<FollowRequest>):
     RecyclerView.Adapter<RequestsRVAdapter.RequestViewHolder>(){
 
     private lateinit var progressDialog: Dialog
-    fun showProgressDialog(){
+    private fun showProgressDialog(){
         progressDialog = Dialog(context)
         progressDialog.setContentView(R.layout.progress_dialog)
         progressDialog.setCancelable(false)
@@ -21,7 +21,7 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
         progressDialog.show()
     }
 
-    fun hideProgressDialog(){
+    private fun hideProgressDialog(){
         progressDialog.dismiss()
     }
 
@@ -33,29 +33,61 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
     override fun onBindViewHolder(holder: RequestViewHolder, position: Int) {
         // we are talking about received Requests for now
         val currentRequest = requestList[position]
-        if (senderProfilePic.isNotEmpty()){
-            GlideLoader(context).loadImageUri(senderProfilePic, holder.profilePic)
-        }else{
-            holder.profilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
-        }
-        if (currentRequest.accepted){
-            holder.tvRequest.text = "$senderUserName Is Now Following You."
-            holder.layOutActionRequest.visibility = View.GONE
-        }else{
-            holder.tvRequest.text = "$senderUserName Wants To Follow You."
-            holder.layOutActionRequest.visibility = View.VISIBLE
-            holder.btnAcceptRequest.setOnClickListener {
-                showProgressDialog()
-                FireStoreClass().acceptFollowRequest(currentRequest.receiverUserID,
-                    currentRequest.senderUserID) { success ->
-                    if (success){
-                        holder.tvRequest.text = "$senderUserName Is Now Following You."
-                        holder.layOutActionRequest.visibility = View.GONE
-                    } // we could here say: else -> hideProgressDialog
+        FireStoreClass().getUserInfoWithCallback(currentRequest.senderUserID) { userInfo ->
+            if (userInfo != null){
+                val senderProfilePic = userInfo.image
+                val senderUserName = userInfo.userName
+                holder.layoutUserInfo.visibility = View.VISIBLE
+                if (senderProfilePic.isNotEmpty()){
+                    GlideLoader(context).loadImageUri(senderProfilePic, holder.profilePic)
+                    holder.profilePic.setOnClickListener {
+                        val intent = Intent(context, FullScreenPostImageActivity::class.java)
+                        intent.putExtra("post_image", senderProfilePic)
+                        context.startActivity(intent)
+                    }
+                }else{
+                    holder.profilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
+                    holder.profilePic.setOnClickListener {
+                        Toast.makeText(context, "This User Does Not Have Profile Picture.", Toast.LENGTH_LONG).show()
+                    }
                 }
-            }
-            holder.btnRejectRequest.setOnClickListener {
-                Toast.makeText(context, "you clicked on reject request", Toast.LENGTH_LONG).show()
+                if (currentRequest.accepted){
+                    holder.tvRequest.text = "$senderUserName Is Now Following You."
+                    holder.layOutActionRequest.visibility = View.GONE
+                }else{
+                    holder.tvRequest.text = "$senderUserName Wants To Follow You."
+                    holder.layOutActionRequest.visibility = View.VISIBLE
+                    holder.btnAcceptRequest.setOnClickListener {
+                        showProgressDialog()
+                        FireStoreClass().acceptFollowRequest(currentRequest.receiverUserID,
+                            currentRequest.senderUserID) { success ->
+                            hideProgressDialog()
+                            if (success){
+                                holder.tvRequest.text = "$senderUserName Is Following You."
+                                holder.layOutActionRequest.visibility = View.GONE
+                            }else{
+                                Toast.makeText(context, "Error While Accepting Follow Request.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                    holder.btnRejectRequest.setOnClickListener {
+                        showProgressDialog()
+                        FireStoreClass().deleteFollowRequest(currentRequest.senderUserID,
+                            currentRequest.receiverUserID) { successful ->
+                            hideProgressDialog()
+                            if (successful){
+                                holder.tvRequest.text = "You Canceled This Request."
+                                holder.layOutActionRequest.visibility = View.GONE
+                            }else{
+                                Toast.makeText(context, "Error While Canceling Follow Request.", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                }
+            }else{
+                holder.layoutUserInfo.visibility = View.GONE
+                holder.layOutActionRequest.visibility = View.GONE
+                Toast.makeText(context, "Error Getting User Info.", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -65,6 +97,7 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
     }
 
     class RequestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
+        val layoutUserInfo: LinearLayout = itemView.findViewById(R.id.layout_user_info)
         val profilePic: ImageView = itemView.findViewById(R.id.iv_profile_pic_request)
         val tvRequest: TextView = itemView.findViewById(R.id.tv_request)
         val layOutActionRequest: LinearLayout = itemView.findViewById(R.id.layout_action_request)
