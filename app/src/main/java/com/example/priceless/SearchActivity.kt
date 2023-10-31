@@ -13,10 +13,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class SearchActivity : BaseActivity(), OnClickListener {
 
@@ -394,91 +391,99 @@ class SearchActivity : BaseActivity(), OnClickListener {
     }
 
 
-    private fun loadPosts(UID: String){
+    private fun loadPosts(UID: String) {
         showProgressDialog()
-        FireStoreClass().getPostsRealTimeListener(UID) { posts, success ->
-            if (success && posts != null && posts.isNotEmpty()){
-                Log.d("posts beginning are:", "$posts")
-                val visiblePosts = ArrayList(posts.filter { it.visibility })
-                Log.d("already visible posts at beginning are:", "$visiblePosts")
-                val postsToUpdate = mutableListOf<PostStructure>()
-                if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis){
-                    lastRequestTimeMillis = System.currentTimeMillis()
-                    coroutineScope.launch {
-                        getTimeNow()
-                        Log.d("getTimeCalled", "date: $dateNow sec: $secondsNow")
-                        if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
-                            for (post in posts){
-                                if (!post.visibility){
-                                    if (secondsNow.toLong() >= post.timeToShare.toLong()) {
-                                        postsToUpdate.add(post)
-                                        Log.d("posts to update are:", "$postsToUpdate")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                coroutineScope.launch {
-                    delay(1000)
-                    if (postsToUpdate.isNotEmpty()){
-                        if (postsToUpdate.size == 1) {
-                            val postToBeUpdated = postsToUpdate[0]
-                            Log.d("1 post t b updated is:", "$postToBeUpdated")
-                            val postHashMap = HashMap<String, Any>()
-                            postHashMap["visibility"] = true
-                            postHashMap["timeCreatedMillis"] = secondsNow
-                            FireStoreClass().updatePostOnFireStore(this@SearchActivity,
-                                UID, postHashMap, postToBeUpdated.postID) { onComplete ->
-                                if (onComplete){
-                                    visiblePosts.add(postToBeUpdated)
-                                    Log.d("visible posts after adding 1 post for update:", "$visiblePosts")
-                                }else{
-                                    showErrorSnackBar("failed to update future post", true)
-                                }
-                            }
-                        }else{
-                            Log.d("list of posts to be updated is:", "$postsToUpdate")
-                            val batchUpdates = mutableMapOf<String, Map<String, Any>>()
-                            for (eachPost in postsToUpdate) {
-                                val postHashMap = HashMap<String, Any>()
-                                postHashMap["visibility"] = true
-                                postHashMap["timeCreatedMillis"] = secondsNow
-                                batchUpdates[eachPost.postID] = postHashMap
-                            }
-                            FireStoreClass().batchUpdatePostsOnFireStore(this@SearchActivity,
-                                UID, batchUpdates) { successfully ->
-                                if (successfully) {
-                                    //for (p in postsToUpdate){
-                                    //    visiblePosts.add(p)
-                                    //}
-                                    visiblePosts.addAll(postsToUpdate)
-                                    Log.d("visible posts after adding list of posts for update:", "$visiblePosts")
-                                }else{
-                                    Log.d("batchUpdate failed", "error while updating multiple posts on fireStore")
-                                }
-                            }
-                        }
-                    }
-                    Log.d("user is:", "$userInfo")
-                    for (i in visiblePosts){
-                        i.profilePicture = userInfo.image
-                        i.userName = userInfo.userName
-                    }
-                    visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-                    Log.d("final visible posts are:", "$visiblePosts")
-                    recyclerView.visibility = VISIBLE
-                    val adapter = RecyclerviewAdapter(this@SearchActivity, visiblePosts, currentUserID)
-                    adapter.notifyDataSetChanged()
-                    val layoutManager = LinearLayoutManager(this@SearchActivity)
-                    recyclerView.layoutManager = layoutManager
-                    recyclerView.adapter = adapter
-                    hideProgressDialog()
-                }
-            }else{
+        coroutineScope.launch {
+            val deferredAllPosts = async { FireStoreClass().getPostsFromFireStore(UID) }
+            val allPosts = deferredAllPosts.await()
+
+            if (allPosts.isNullOrEmpty()) {
                 recyclerView.visibility = View.GONE
                 hideProgressDialog()
+                Toast.makeText(this@SearchActivity, "all posts isNullOrEmpty", Toast.LENGTH_SHORT).show()
+                return@launch
             }
+
+            Log.d("--- all posts beginning:", "${allPosts.size}")
+            val visiblePosts = ArrayList(allPosts.filter { it.visibility })
+            Log.d("--- already visible posts beginning:", "${visiblePosts.size}")
+            val postsToUpdate = mutableListOf<PostStructure>()
+            val timeJob = async { getTimeNow() }
+            timeJob.await()
+            if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
+                for (post in allPosts){
+                    if (!post.visibility){
+                        if (secondsNow.toLong() >= post.timeToShare.toLong()) {
+                            postsToUpdate.add(post)
+                            Log.d("--- posts to update are:", "${postsToUpdate.size}")
+                        }
+                    }
+                }
+            }else{
+                Toast.makeText(this@SearchActivity, "err getting time", Toast.LENGTH_SHORT).show()
+            }
+            if (postsToUpdate.isNotEmpty()){
+                if (postsToUpdate.size == 1) {
+                    val postToBeUpdated = postsToUpdate[0]
+                    Log.d("--- 1 post t b updated is:", "$postToBeUpdated")
+                    val postHashMap = HashMap<String, Any>()
+                    postHashMap["visibility"] = true
+                    postHashMap["timeCreatedMillis"] = secondsNow
+                    val updatePostJob = async {
+                        val deferredCompletable = CompletableDeferred<Boolean>()
+                        FireStoreClass().updatePostOnFireStore(this@SearchActivity,
+                            postToBeUpdated.userId, postHashMap, postToBeUpdated.postID) { onComplete ->
+                            deferredCompletable.complete(onComplete)
+                        }
+                        deferredCompletable.await()
+                    }
+
+                    if (updatePostJob.await()) {
+                        postToBeUpdated.timeCreatedMillis = secondsNow
+                        visiblePosts.add(postToBeUpdated)
+                        Log.d("--- visible posts after adding 1 post for update:", "${visiblePosts.size}")
+                    }else{
+                        Toast.makeText(this@SearchActivity, "err during update a post.", Toast.LENGTH_SHORT).show()
+                    }
+                }else{
+                    Log.d("--- multiple posts to be updated are:", "${postsToUpdate.size}")
+                    val batchUpdates = mutableMapOf<String, Map<String, Any>>()
+                    for (eachPost in postsToUpdate) {
+                        val postHashMap = HashMap<String, Any>()
+                        postHashMap["visibility"] = true
+                        postHashMap["timeCreatedMillis"] = secondsNow
+                        batchUpdates[eachPost.postID] = postHashMap
+                        eachPost.timeCreatedMillis = secondsNow
+                    }
+                    val batchUpdateJob = async {
+                        val deferredCompletable = CompletableDeferred<Boolean>()
+                        FireStoreClass().batchUpdatePostsOnFireStore(UID, batchUpdates) { successfully ->
+                            deferredCompletable.complete(successfully)
+                        }
+                        deferredCompletable.await()
+                    }
+                    if (batchUpdateJob.await()) {
+                        visiblePosts.addAll(postsToUpdate)
+                        Log.d("--- visible posts after adding multiple posts for update:", "${visiblePosts.size}")
+                    } else {
+                        Toast.makeText(this@SearchActivity, "err during batch update posts.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            Log.d("user is:", "$userInfo")
+            for (i in visiblePosts){
+                i.profilePicture = userInfo.image
+                i.userName = userInfo.userName
+            }
+            visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
+            Log.d("final visible posts are:", "$visiblePosts")
+            recyclerView.visibility = VISIBLE
+            val adapter = RecyclerviewAdapter(this@SearchActivity, visiblePosts, currentUserID)
+            adapter.notifyDataSetChanged()
+            val layoutManager = LinearLayoutManager(this@SearchActivity)
+            recyclerView.layoutManager = layoutManager
+            recyclerView.adapter = adapter
+            hideProgressDialog()
         }
     }
 

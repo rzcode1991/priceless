@@ -216,6 +216,9 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         }else if(disallowedPattern.containsMatchIn(postText)){
             showErrorSnackBar("You Cant Use These Characters: \\[]<>#/ In Post Text.", true)
             false
+        }else if(postText.length > 1000){
+            showErrorSnackBar("Post Text Too Long.", true)
+            false
         }else if (post.postText == etPostText.text.toString() && imageURI == null){
             showErrorSnackBar("You Did Not Change Anything", true)
             false

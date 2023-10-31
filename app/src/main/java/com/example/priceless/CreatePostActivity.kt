@@ -240,6 +240,11 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             return false
         }
 
+        if (postText.length > 1000){
+            showErrorSnackBar("Post Text Too Long.", true)
+            return false
+        }
+
         val disallowedPattern = Regex("[\\[\\]#/<\\\\>]")
 
         if (disallowedPattern.containsMatchIn(postText)) {

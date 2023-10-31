@@ -1,21 +1,24 @@
 package com.example.priceless
 
 import android.app.Activity
-import android.app.Dialog
-import android.content.Context
-import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.SetOptions
-import com.google.firebase.firestore.Source
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.ktx.storage
 import com.google.firebase.firestore.WriteBatch
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.*
+import org.checkerframework.checker.guieffect.qual.UI
 import kotlin.math.log
 
 
@@ -120,6 +123,58 @@ class FireStoreClass {
                 Log.e("err unfollowing user", e.message.toString(), e)
             }
     }
+
+
+    fun getFollowingListtttt(userID: String, callback: (ArrayList<String>?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection("following")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (!snapshot.isEmpty){
+                    val followingList = ArrayList<String>()
+                    for (document in snapshot.documents){
+                        val uID = document.getString("userID")
+                        if (uID != null){
+                            followingList.add(uID)
+                        }
+                    }
+                    callback(followingList)
+                }else{
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(null)
+                Log.e("err getting following list", e.message.toString(), e)
+            }
+    }
+
+
+    suspend fun getFollowingList(userID: String): List<String>? = coroutineScope {
+        return@coroutineScope try {
+            val snapshot = mFireStore.collection(Constants.USERS)
+                .document(userID)
+                .collection("following")
+                .get()
+                .await()
+
+            if (!snapshot.isEmpty) {
+                val followingList = ArrayList<String>()
+                for (document in snapshot.documents) {
+                    val uID = document.getString("userID")
+                    uID?.let { followingList.add(it) }
+                }
+                followingList
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("err getting following list", e.message.toString(), e)
+            null
+        }
+    }
+
 
 
     fun getReceivedRequests(userID: String, callback: (ArrayList<FollowRequest>?) -> Unit){
@@ -342,8 +397,9 @@ class FireStoreClass {
     }
 
 
-    fun batchUpdatePostsOnFireStore(activity: Activity, userID: String, batchUpdates: Map<String,
-            Map<String, Any>>, onComplete: (Boolean) -> Unit) {
+    fun batchUpdatePostsOnFireStore(userID: String,
+                                    batchUpdates: Map<String, Map<String, Any>>,
+                                    onComplete: (Boolean) -> Unit) {
 
         // Create a batch object
         val batch: WriteBatch = mFireStore.batch()
@@ -368,6 +424,37 @@ class FireStoreClass {
             .addOnFailureListener { e ->
                 onComplete(false)
                 Log.e("FireStoreClass", "Error updating posts in batch: ${e.message}")
+            }
+    }
+
+
+    fun batchUpdatePostsForMultipleUsers(userUpdates: Map<String, List<Map<String, Any>>>, onComplete: (Boolean) -> Unit) {
+        // Create a batch object
+        val batch: WriteBatch = mFireStore.batch()
+
+        for ((userID, batchUpdates) in userUpdates) {
+            // Specify the path to the posts collection for the user
+            val postsCollectionRef = mFireStore.collection(Constants.USERS)
+                .document(userID)
+                .collection(Constants.Posts)
+
+            // Iterate through the updates for this user and add them to the batch
+            for (update in batchUpdates) {
+                val documentId = update["documentId"] as String
+                val data = update["data"] as Map<String, Any>
+                val documentRef = postsCollectionRef.document(documentId)
+                batch.update(documentRef, data)
+            }
+        }
+
+        // Commit the batch updates
+        batch.commit()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("err batch update posts", "Error updating posts in batch: ${e.message}")
             }
     }
 
@@ -486,14 +573,14 @@ class FireStoreClass {
     }
 
 
-    fun getCurrentUserID(onUserIDObtained: (String) -> Unit) {
+    fun getCurrentUserID(callback: (String) -> Unit) {
         val auth: FirebaseAuth = FirebaseAuth.getInstance()
         val currentUser = auth.currentUser
         if (currentUser != null) {
             val currentUserID = currentUser.uid
-            onUserIDObtained(currentUserID)
+            callback(currentUserID)
         } else {
-            onUserIDObtained("")
+            callback("")
         }
     }
 
@@ -637,12 +724,41 @@ class FireStoreClass {
 
 
 
-    fun getPostsFromFireStore(activity: Activity) {
+    fun getASinglePostFromFireStoreeeeee(userID: String, postId: String, callback: (PostStructure?) -> Unit) {
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
+            .document(postId)
             .get()
-            .addOnSuccessListener { snapshot ->
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val post = document.toObject(PostStructure::class.java)
+                    if (post != null) {
+                        callback(post)
+                    }else{
+                        callback(null)
+                    }
+                } else {
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(null)
+                Log.e("Error getting posts from FireStore", e.message.toString(), e)
+            }
+    }
+
+
+
+    suspend fun getPostsFromFireStore(userID: String): ArrayList<PostStructure>? = coroutineScope {
+        return@coroutineScope try {
+            val snapshot = mFireStore.collection(Constants.USERS)
+                .document(userID)
+                .collection(Constants.Posts)
+                .get()
+                .await()
+
+            if (!snapshot.isEmpty) {
                 val posts = ArrayList<PostStructure>()
                 for (document in snapshot.documents) {
                     val post = document.toObject(PostStructure::class.java)
@@ -650,39 +766,14 @@ class FireStoreClass {
                         posts.add(post)
                     }
                 }
-                //when(activity){
-                //    is FragmentActivity -> {
-                //        activity.successGettingPostsFromFireStore(posts)
-                //    }
-                //}
+                posts
+            } else {
+                null
             }
-            .addOnFailureListener { e ->
-                Log.e(activity.javaClass.simpleName, "Error getting posts from FireStore", e)
-            }
-    }
-
-
-    fun getPostsFromFireStoreAndReturnThem(callback: (ArrayList<PostStructure>) -> Unit) {
-        val posts = ArrayList<PostStructure>()
-        mFireStore.collection(Constants.USERS)
-            .document(getUserID())
-            .collection(Constants.Posts)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                for (document in snapshot.documents) {
-                    val post = document.toObject(PostStructure::class.java)
-                    if (post != null) {
-                        posts.add(post)
-                    }
-                }
-                // Invoke the callback with the retrieved posts when successful
-                callback(posts)
-            }
-            .addOnFailureListener { e ->
-                Log.e("err getting posts", "Error getting posts from FireStore", e)
-                // Invoke the callback with an empty list or an error indicator if there's a failure
-                callback(ArrayList())
-            }
+        } catch (e: Exception) {
+            Log.e("Error getting posts from FireStore", "Error getting posts from FireStore", e)
+            null
+        }
     }
 
 
