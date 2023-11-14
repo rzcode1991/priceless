@@ -1,7 +1,6 @@
 package com.example.priceless
 
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -31,11 +30,9 @@ class SearchActivity : BaseActivity(), OnClickListener {
     private lateinit var recyclerView: RecyclerView
     private var userID: String = ""
     private lateinit var userInfo: User
-    private var lastRequestTimeMillis: Long = 0L
-    private val requestCoolDownMillis: Long = 5000L
     private lateinit var coroutineScope: CoroutineScope
     private var getTime: GetTime? = null
-    private var dateAndTimePair: Pair<String?, String?>? = null
+    private lateinit var dateAndTimePair: Pair<String, String>
     private var dateNow: String = ""
     private var secondsNow: String = ""
     private lateinit var currentUserID: String
@@ -63,7 +60,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
         btnFollow = findViewById(R.id.btn_follow_searched)
         tvPrivate = findViewById(R.id.tv_private_user_searched)
         coroutineScope = CoroutineScope(Dispatchers.Main)
-        getTime = GetTime()
+        //getTime = GetTime()
         recyclerView = findViewById(R.id.recycler_view_searched_user)
         layoutOtherUser = findViewById(R.id.layout_other_user)
         tvOtherUserFollowsYou = findViewById(R.id.tv_other_user_follows_you)
@@ -384,7 +381,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
     }
 
 
-    fun createFollowRequestSuccessful(request: FollowRequest){
+    fun createFollowRequestSuccessful(){
         checkFollowSituation()
         hideProgressDialog()
         showErrorSnackBar("Your Request Was Sent Successfully", false)
@@ -420,7 +417,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
                     }
                 }
             }else{
-                Toast.makeText(this@SearchActivity, "err getting time", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SearchActivity, "Error Getting Time; Check Your Internet Connection", Toast.LENGTH_SHORT).show()
             }
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
@@ -488,21 +485,21 @@ class SearchActivity : BaseActivity(), OnClickListener {
     }
 
 
-    private suspend fun getTimeNow(){
-        dateAndTimePair = getTime?.getCurrentTimeAndDate()
-        if (dateAndTimePair != null){
-            if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
-                dateNow = dateAndTimePair!!.first!!
-                secondsNow = dateAndTimePair!!.second!!
+    private suspend fun getTimeNow() {
+        val result = GetTime().getCurrentTimeAndDate()
+
+        if (result.isSuccess) {
+            val dateAndTimePair = result.getOrNull()
+            if (dateAndTimePair != null) {
+                dateNow = dateAndTimePair.first
+                secondsNow = dateAndTimePair.second
+            }
+        } else {
+            val exception = result.exceptionOrNull()
+            if (exception != null) {
+                Log.e("Error getting time", exception.message.toString(), exception)
             }
         }
-    }
-
-
-    fun deleteFollowRequestSuccessful(){
-        hideProgressDialog()
-        checkFollowSituation()
-        Toast.makeText(this, "Follow Request Deleted", Toast.LENGTH_LONG).show()
     }
 
 

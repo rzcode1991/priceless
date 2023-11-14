@@ -17,7 +17,6 @@ class FragmentActivity : BaseActivity() {
 
     private lateinit var binding: ActivityFragmentBinding
     private lateinit var homeViewModel: HomeViewModel
-    //private lateinit var fireStoreClass: FireStoreClass
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,28 +37,8 @@ class FragmentActivity : BaseActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-        //fireStoreClass = FireStoreClass()
         homeViewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
-
-        //fireStoreClass.getUserInfoFromFireStore(this)
-        //
-        //fireStoreClass.getPostsRealtimeListener()
-        //fireStoreClass.getPostsFromFireStore(this)
     }
-
-
-    /*
-    fun successGettingUserInfoFromFireStore(user: User){
-        homeViewModel.setUserData(user)
-        //hideProgressDialog()
-    }
-
-
-    fun successGettingPostsFromFireStore(posts: ArrayList<PostStructure>){
-        //homeViewModel.setPostsData(posts)
-    }
-
-     */
 
 
     override fun onBackPressed() {

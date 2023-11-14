@@ -32,6 +32,12 @@ object Constants {
         activity.startActivityForResult(imageIntent, ImageIntentCode)
     }
 
+    fun showImageFromStorageForRecyclerView(activity: Activity){
+        val imageIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+        activity.startActivityForResult(imageIntent, 400)
+    }
+
+
     fun getExtensionFromFile(activity: Activity, imageUri: Uri): String?{
         return MimeTypeMap.getSingleton().getExtensionFromMimeType(activity.contentResolver.getType(imageUri))
     }

@@ -25,9 +25,11 @@ class DashboardFragment : Fragment() {
     private lateinit var dashViewModel: DashboardViewModel
     private var dateNow: String = ""
     private var secondsNow: String = ""
-    private var dateAndTimePair: Pair<String?, String?>? = null
+    private var dateAndTimePair = Pair("", "")
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var progressDialog: Dialog
+    private var lastRequestTimeMillis: Long = 0L
+    private val requestCoolDownMillis: Long = 1000L
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -73,6 +75,7 @@ class DashboardFragment : Fragment() {
         FireStoreClass().getCurrentUserID { currentUID ->
             if (currentUID.isNotEmpty()){
                 dashViewModel.posts.observe(viewLifecycleOwner) { posts ->
+                    binding.pbFragmentDashboard.visibility = View.GONE
                     val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts), currentUID)
                     adapter.notifyDataSetChanged()
                     val layoutManager = LinearLayoutManager(requireContext())
@@ -91,15 +94,18 @@ class DashboardFragment : Fragment() {
         if (_binding != null) {
             binding.ibRefreshTimeline.setImageResource(R.drawable.ic_baseline_downloading_24)
         }
-        showProgressDialog()
+        //showProgressDialog()
 
         coroutineScope.launch {
             val currentUserID = async { FireStoreClass().getUserID() }
             val followingList = async { FireStoreClass().getFollowingList(currentUserID.await()) }
 
             if (followingList.await().isNullOrEmpty()) {
-                hideProgressDialog()
-                Toast.makeText(activity, "following list isNullOrEmpty", Toast.LENGTH_SHORT).show()
+                //hideProgressDialog()
+                if (_binding != null) {
+                    Toast.makeText(activity, "You Are Not Following Any User.", Toast.LENGTH_SHORT).show()
+                    binding.pbFragmentDashboard.visibility = View.GONE
+                }
                 return@launch
             }
 
@@ -109,8 +115,11 @@ class DashboardFragment : Fragment() {
 
             val allPosts = userPostsDeferred?.awaitAll()?.filterNotNull()?.flatten()
             if (allPosts.isNullOrEmpty()) {
-                hideProgressDialog()
-                Toast.makeText(activity, "all posts isNullOrEmpty", Toast.LENGTH_SHORT).show()
+                //hideProgressDialog()
+                if (_binding != null) {
+                    Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
+                    binding.pbFragmentDashboard.visibility = View.GONE
+                }
                 return@launch
             }
 
@@ -122,8 +131,11 @@ class DashboardFragment : Fragment() {
 
             val postsToUpdate = mutableListOf<PostStructure>()
 
-            val timeJob = async { getTimeNow() }
-            timeJob.await()
+            if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis){
+                lastRequestTimeMillis = System.currentTimeMillis()
+                val timeJob = async { getTimeNow() }
+                timeJob.await()
+            }
             Log.d("---getTimeCalled timeline", "date: $dateNow sec: $secondsNow")
             if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
                 for (post in allPosts){
@@ -136,7 +148,9 @@ class DashboardFragment : Fragment() {
                 }
             }else{
                 //hideProgressDialog()
-                Toast.makeText(activity, "err getting time", Toast.LENGTH_SHORT).show()
+                if (_binding != null) {
+                    Toast.makeText(activity, "Error Getting Time; Check Your Internet Connection", Toast.LENGTH_SHORT).show()
+                }
             }
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
@@ -160,7 +174,9 @@ class DashboardFragment : Fragment() {
                         visiblePosts.add(postToBeUpdated)
                         Log.d("---timeline visible posts after adding 1 post for update:", "${visiblePosts.size}")
                     }else{
-                        Toast.makeText(context, "err during update a post.", Toast.LENGTH_SHORT).show()
+                        if (_binding != null){
+                            Toast.makeText(context, "err during update a post.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }else{
                     Log.d("---timeline multiple posts to b updated is:", "${postsToUpdate.size}")
@@ -188,7 +204,9 @@ class DashboardFragment : Fragment() {
                         visiblePosts.addAll(postsToUpdate)
                         Log.d("---timeline visible posts after adding multiple posts for update:", "${visiblePosts.size}")
                     } else {
-                        Toast.makeText(context, "err during batch update posts.", Toast.LENGTH_SHORT).show()
+                        if (_binding != null){
+                            Toast.makeText(context, "err during batch update posts.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
@@ -211,26 +229,41 @@ class DashboardFragment : Fragment() {
             }
             userInfoJobs.awaitAll()
             Log.d("---all final visible posts are:", "${visiblePosts.size}")
-            visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-            dashViewModel.updatePosts(visiblePosts)
-
-            hideProgressDialog()
-            if (_binding != null){
-                binding.ibRefreshTimeline.setImageResource(R.drawable.ic_baseline_refresh_24)
+            if (visiblePosts.isNotEmpty()){
+                visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
+                dashViewModel.updatePosts(visiblePosts)
+                //hideProgressDialog()
+                if (_binding != null){
+                    binding.ibRefreshTimeline.setImageResource(R.drawable.ic_baseline_refresh_24)
+                    binding.pbFragmentDashboard.visibility = View.GONE
+                }
+            }else{
+                if (_binding != null){
+                    binding.pbFragmentDashboard.visibility = View.GONE
+                    Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
 
 
-    private suspend fun getTimeNow(){
-        dateAndTimePair = GetTime().getCurrentTimeAndDate()
-        if (dateAndTimePair != null){
-            if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
-                dateNow = dateAndTimePair!!.first!!
-                secondsNow = dateAndTimePair!!.second!!
+    private suspend fun getTimeNow() {
+        val result = GetTime().getCurrentTimeAndDate()
+
+        if (result.isSuccess) {
+            val dateAndTimePair = result.getOrNull()
+            if (dateAndTimePair != null) {
+                dateNow = dateAndTimePair.first
+                secondsNow = dateAndTimePair.second
+            }
+        } else {
+            val exception = result.exceptionOrNull()
+            if (exception != null) {
+                Log.e("Error getting time", exception.message.toString(), exception)
             }
         }
     }
+
 
 
     private fun showProgressDialog(){

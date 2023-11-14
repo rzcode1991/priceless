@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top"
+    tools:context=".UserProfileActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/layout_user_info_user_profile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/iv_profile_pic_user_profile"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginEnd="5dp"
+                android:layout_gravity="start|center"
+                android:src="@drawable/ic_baseline_account_circle_24"/>
+
+            <TextView
+                android:id="@+id/tv_username_user_profile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="start|center"
+                android:layout_marginStart="5dp"
+                android:text="UserName"
+                android:textSize="15sp"
+                android:textColor="@color/colorPrimaryDark"/>
+
+            <LinearLayout
+                android:id="@+id/layout_first_last_name_user_profile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="center"
+                android:visibility="gone"
+                android:layout_marginStart="30dp">
+
+                <TextView
+                    android:id="@+id/tv_first_name_user_profile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="first name:"
+                    android:textColor="@color/colorPrimaryText"
+                    android:layout_marginBottom="2dp"
+                    android:textSize="12sp"/>
+
+                <TextView
+                    android:id="@+id/tv_last_name_user_profile"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="last name:"
+                    android:textColor="@color/colorPrimaryText"
+                    android:layout_marginTop="2dp"
+                    android:textSize="12sp"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_other_user_follows_you_user_profile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="2dp">
+
+            <TextView
+                android:id="@+id/tv_other_user_follows_you_user_profile"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:visibility="gone"
+                android:textColor="@color/colorPrimaryText"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
+                android:textSize="14sp"/>
+
+            <Button
+                android:id="@+id/btn_stop_other_user_user_profile"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="4dp"
+                android:backgroundTint="@color/white"
+                android:text="Stop It"
+                android:visibility="gone"
+                android:textColor="@color/black"
+                android:textAllCaps="false"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layout_action_request_user_profile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <Button
+                android:id="@+id/btn_accept_request_user_profile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:backgroundTint="@color/white"
+                android:text="Accept"
+                android:visibility="visible"
+                android:textAllCaps="false"
+                android:textColor="@color/black" />
+
+            <Button
+                android:id="@+id/btn_reject_request_user_profile"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:backgroundTint="@color/white"
+                android:text="Reject"
+                android:visibility="visible"
+                android:textAllCaps="false"
+                android:textColor="@color/black" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_follow_user_profile"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="20dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginBottom="10dp"
+            android:backgroundTint="@color/white"
+            android:text=""
+            android:visibility="gone"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
+
+        <TextView
+            android:id="@+id/tv_private_user_user_profile"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Private User"
+            android:visibility="gone"
+            android:textSize="20sp"
+            android:layout_marginTop="30dp"
+            android:textColor="@color/colorPrimaryText"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view_posts_user_profile"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginTop="8dp"
+            android:visibility="gone"
+            tools:listitem="@layout/post_item"/>
+
+    </LinearLayout>
+
+</ScrollView>

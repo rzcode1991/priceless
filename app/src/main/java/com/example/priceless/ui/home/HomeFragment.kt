@@ -19,10 +19,12 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private var dateNow: String = ""
     private var secondsNow: String = ""
-    private var dateAndTimePair: Pair<String?, String?>? = null
+    private lateinit var dateAndTimePair: Pair<String, String>
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var progressDialog: Dialog
+    private var lastRequestTimeMillis: Long = 0L
+    private val requestCoolDownMillis: Long = 1000L
 
 
     // This property is only valid between onCreateView and
@@ -78,6 +80,7 @@ class HomeFragment : Fragment() {
         val currentUserID = FireStoreClass().getUserID()
 
         homeViewModel.posts.observe(viewLifecycleOwner) { posts ->
+            binding.pbFragmentHome.visibility = View.GONE
             val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts), currentUserID)
             adapter.notifyDataSetChanged()
             val layoutManager = LinearLayoutManager(requireContext())
@@ -94,7 +97,7 @@ class HomeFragment : Fragment() {
         if (_binding != null){
             binding.ibRefresh.setImageResource(R.drawable.ic_baseline_downloading_24)
         }
-        showProgressDialog()
+        //showProgressDialog()
         coroutineScope.launch {
             val deferredUserID = async { FireStoreClass().getUserID() }
             val userID = deferredUserID.await()
@@ -103,8 +106,11 @@ class HomeFragment : Fragment() {
             val allPosts = deferredAllPosts.await()
 
             if (allPosts.isNullOrEmpty()) {
-                hideProgressDialog()
-                Toast.makeText(activity, "all posts isNullOrEmpty", Toast.LENGTH_SHORT).show()
+                //hideProgressDialog()
+                if (_binding != null){
+                    Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
+                    binding.pbFragmentHome.visibility = View.GONE
+                }
                 return@launch
             }
 
@@ -112,8 +118,11 @@ class HomeFragment : Fragment() {
             val visiblePosts = ArrayList(allPosts.filter { it.visibility })
             Log.d("--- already visible posts beginning:", "${visiblePosts.size}")
             val postsToUpdate = mutableListOf<PostStructure>()
-            val timeJob = async { getTimeNow() }
-            timeJob.await()
+            if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis){
+                lastRequestTimeMillis = System.currentTimeMillis()
+                val timeJob = async { getTimeNow() }
+                timeJob.await()
+            }
             if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
                 for (post in allPosts){
                     if (!post.visibility){
@@ -124,7 +133,9 @@ class HomeFragment : Fragment() {
                     }
                 }
             }else{
-                Toast.makeText(activity, "err getting time", Toast.LENGTH_SHORT).show()
+                if (_binding != null) {
+                    Toast.makeText(activity, "Error Getting Time; Check Your Internet Connection", Toast.LENGTH_SHORT).show()
+                }
             }
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
@@ -147,7 +158,9 @@ class HomeFragment : Fragment() {
                         visiblePosts.add(postToBeUpdated)
                         Log.d("--- visible posts after adding 1 post for update:", "${visiblePosts.size}")
                     }else{
-                        Toast.makeText(context, "err during update a post.", Toast.LENGTH_SHORT).show()
+                        if (_binding != null){
+                            Toast.makeText(context, "err during update a post.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }else{
                     Log.d("--- multiple posts to be updated are:", "${postsToUpdate.size}")
@@ -170,7 +183,9 @@ class HomeFragment : Fragment() {
                         visiblePosts.addAll(postsToUpdate)
                         Log.d("--- visible posts after adding multiple posts for update:", "${visiblePosts.size}")
                     } else {
-                        Toast.makeText(context, "err during batch update posts.", Toast.LENGTH_SHORT).show()
+                        if (_binding != null){
+                            Toast.makeText(context, "err during batch update posts.", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }
@@ -190,22 +205,37 @@ class HomeFragment : Fragment() {
             }
             userInfoJob.await()
             Log.d("--- all final visible posts are:", "${visiblePosts.size}")
-            visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-            homeViewModel.updatePosts(visiblePosts)
-            if (_binding != null){
-                binding.ibRefresh.setImageResource(R.drawable.ic_baseline_refresh_24)
+            if (visiblePosts.isNotEmpty()){
+                visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
+                homeViewModel.updatePosts(visiblePosts)
+                if (_binding != null){
+                    binding.ibRefresh.setImageResource(R.drawable.ic_baseline_refresh_24)
+                    binding.pbFragmentHome.visibility = View.GONE
+                }
+                //hideProgressDialog()
+            }else{
+                if (_binding != null){
+                    binding.pbFragmentHome.visibility = View.GONE
+                    Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
+                }
             }
-            hideProgressDialog()
         }
     }
 
 
-    private suspend fun getTimeNow(){
-        dateAndTimePair = GetTime().getCurrentTimeAndDate()
-        if (dateAndTimePair != null){
-            if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
-                dateNow = dateAndTimePair!!.first!!
-                secondsNow = dateAndTimePair!!.second!!
+    private suspend fun getTimeNow() {
+        val result = GetTime().getCurrentTimeAndDate()
+
+        if (result.isSuccess) {
+            val dateAndTimePair = result.getOrNull()
+            if (dateAndTimePair != null) {
+                dateNow = dateAndTimePair.first
+                secondsNow = dateAndTimePair.second
+            }
+        } else {
+            val exception = result.exceptionOrNull()
+            if (exception != null) {
+                Log.e("Error getting time", exception.message.toString(), exception)
             }
         }
     }

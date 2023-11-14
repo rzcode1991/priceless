@@ -40,16 +40,13 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
                 holder.layoutUserInfo.visibility = View.VISIBLE
                 if (senderProfilePic.isNotEmpty()){
                     GlideLoader(context).loadImageUri(senderProfilePic, holder.profilePic)
-                    holder.profilePic.setOnClickListener {
-                        val intent = Intent(context, FullScreenPostImageActivity::class.java)
-                        intent.putExtra("post_image", senderProfilePic)
-                        context.startActivity(intent)
-                    }
                 }else{
                     holder.profilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
-                    holder.profilePic.setOnClickListener {
-                        Toast.makeText(context, "This User Does Not Have Profile Picture.", Toast.LENGTH_LONG).show()
-                    }
+                }
+                holder.profilePic.setOnClickListener {
+                    val intent = Intent(context, UserProfileActivity::class.java)
+                    intent.putExtra("userID", currentRequest.senderUserID)
+                    context.startActivity(intent)
                 }
                 if (currentRequest.accepted){
                     holder.tvRequest.text = "$senderUserName Is Now Following You."
@@ -87,7 +84,6 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
             }else{
                 holder.layoutUserInfo.visibility = View.GONE
                 holder.layOutActionRequest.visibility = View.GONE
-                Toast.makeText(context, "Error Getting User Info.", Toast.LENGTH_LONG).show()
             }
         }
     }

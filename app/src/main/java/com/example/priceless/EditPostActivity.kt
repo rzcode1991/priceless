@@ -45,7 +45,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     private var dateNow: String = ""
     private var secondsNow: String = ""
     private var getTime: GetTime? = null
-    private var dateAndTimePair: Pair<String?, String?>? = null
+    private lateinit var dateAndTimePair: Pair<String, String>
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +61,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         btnCancelEditing = findViewById(R.id.btn_cancel_editing_post)
         btnDeletePost = findViewById(R.id.btn_delete_post)
 
-        getTime = GetTime()
+        //getTime = GetTime()
 
         if (intent.hasExtra("entire_post")){
             post = intent.getParcelableExtra("entire_post")!!
@@ -70,7 +70,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         setPost()
         btnEditAndUpdatePost.setOnClickListener(this@EditPostActivity)
         btnCancelEditing.setOnClickListener(this@EditPostActivity)
-        ivPostImage.setOnClickListener(this@EditPostActivity)
+        //ivPostImage.setOnClickListener(this@EditPostActivity)
         btnDeletePost.setOnClickListener(this@EditPostActivity)
 
     }
@@ -87,6 +87,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         // set color for etPostText
         if (post.postImage.isNotEmpty()){
             GlideLoader(this).loadImageUri(post.postImage, ivPostImage)
+            ivPostImage.setOnClickListener(this@EditPostActivity)
         }else{
             ivPostImage.setImageResource(R.drawable.ic_baseline_image_24)
         }
@@ -105,7 +106,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                     if (editOrUpdateSituation == "edit"){
                         Toast.makeText(this, "now you can edit the text or change the image", Toast.LENGTH_LONG).show()
                         btnEditAndUpdatePost.text = "Update"
-                        btnCancelEditing.visibility = VISIBLE
+                        //btnCancelEditing.visibility = VISIBLE
                         btnDeletePost.visibility = VISIBLE
                         etPostText.isEnabled = true
                         ivPostImage.setOnClickListener {
@@ -131,7 +132,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                                     try {
                                         updatePost()
                                     } catch (e: Exception) {
-                                        Log.d("err calling createPost", e.message.toString())
+                                        Log.d("err calling updatePost", e.message.toString())
                                     }
                                 }
                             }
@@ -139,9 +140,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                     }
                 }
                 R.id.btn_cancel_editing_post -> {
-                    if (btnCancelEditing.visibility == VISIBLE){
-                        finish()
-                    }
+                    finish()
                 }
                 R.id.iv_post_image_edit_post -> {
                     if (post.postImage.isNotEmpty()){
@@ -173,7 +172,8 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     }
 
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
+                                            grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == Constants.PermissionExternalStorageCode){
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
@@ -216,7 +216,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         }else if(disallowedPattern.containsMatchIn(postText)){
             showErrorSnackBar("You Cant Use These Characters: \\[]<>#/ In Post Text.", true)
             false
-        }else if(postText.length > 1000){
+        }else if(postText.length > 2000){
             showErrorSnackBar("Post Text Too Long.", true)
             false
         }else if (post.postText == etPostText.text.toString() && imageURI == null){
@@ -236,7 +236,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             try {
                 updatePost()
             } catch (e: Exception) {
-                Log.d("err calling createPost", e.message.toString())
+                Log.d("err calling updatePost", e.message.toString())
             }
         }
     }
@@ -245,7 +245,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     private suspend fun updatePost(){
         getTimeNow()
         if (secondsNow.isEmpty() || dateNow.isEmpty()){
-            showErrorSnackBar("error getting time online, try again", true)
+            showErrorSnackBar("Error Getting Time; Check Your Internet Connection", true)
             hideProgressDialog()
         }else{
             val postHashMap = HashMap<String, Any>()
@@ -282,12 +282,19 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     }
 
 
-    private suspend fun getTimeNow(){
-        dateAndTimePair = getTime?.getCurrentTimeAndDate()
-        if (dateAndTimePair != null){
-            if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
-                dateNow = dateAndTimePair!!.first!!
-                secondsNow = dateAndTimePair!!.second!!
+    private suspend fun getTimeNow() {
+        val result = GetTime().getCurrentTimeAndDate()
+
+        if (result.isSuccess) {
+            val dateAndTimePair = result.getOrNull()
+            if (dateAndTimePair != null) {
+                dateNow = dateAndTimePair.first
+                secondsNow = dateAndTimePair.second
+            }
+        } else {
+            val exception = result.exceptionOrNull()
+            if (exception != null) {
+                Log.e("Error getting time", exception.message.toString(), exception)
             }
         }
     }
@@ -300,7 +307,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             newPostImage, newTimeCreatedMillis, newTimeCreatedToShow, "now", true, false, post.postID, true)
         sortedPosts[newTimeCreatedMillis] = newPost
         hideProgressDialog()
-        Toast.makeText(this, "post updated successfully", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Post Updated Successfully", Toast.LENGTH_LONG).show()
         val intent = Intent(this@EditPostActivity, FragmentActivity::class.java)
         startActivity(intent)
         finish()

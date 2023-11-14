@@ -214,6 +214,10 @@ class FireStoreClass {
                         activity.hideProgressDialog()
                         activity.showErrorSnackBar(e.message.toString(), true)
                     }
+                    is UserProfileActivity -> {
+                        activity.hideProgressDialog()
+                        activity.showErrorSnackBar(e.message.toString(), true)
+                    }
                 }
                 Log.e(activity.javaClass.simpleName, "error creating follow request", e)
             }
@@ -229,13 +233,20 @@ class FireStoreClass {
             .addOnSuccessListener {
                 when(activity){
                     is SearchActivity -> {
-                        activity.createFollowRequestSuccessful(request)
+                        activity.createFollowRequestSuccessful()
+                    }
+                    is UserProfileActivity -> {
+                        activity.createFollowRequestSuccessful()
                     }
                 }
             }
             .addOnFailureListener { e ->
                 when(activity){
                     is SearchActivity -> {
+                        activity.hideProgressDialog()
+                        activity.showErrorSnackBar(e.message.toString(), true)
+                    }
+                    is UserProfileActivity -> {
                         activity.hideProgressDialog()
                         activity.showErrorSnackBar(e.message.toString(), true)
                     }
@@ -378,6 +389,568 @@ class FireStoreClass {
 
     }
 
+    fun getUIDsOfPrivateCommentsForPostOwner(postID: String, postOwnerUID: String,
+                                             onComplete: (ArrayList<String>?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    val uIDs = ArrayList<String>()
+                    for (doc in documents){
+                        uIDs.add(doc.id)
+                    }
+                    onComplete(uIDs)
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getUIDsOfPrivateCommentsForPostOwner", e.message.toString(), e)
+            }
+    }
+
+    fun getPrivateCommentsFromUIDsForPostOwner(postID: String, postOwnerUID: String, uID: String,
+                                               onComplete: (ArrayList<CommentStructure>?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(uID)
+            .collection("privateComments")
+            .get()
+            .addOnSuccessListener { docs ->
+                if (!docs.isEmpty){
+                    val comments = ArrayList<CommentStructure>()
+                    for (i in docs){
+                        comments.add(i.toObject(CommentStructure::class.java))
+                    }
+                    onComplete(comments)
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getting private comments for post owner", e.message.toString(), e)
+            }
+    }
+
+    fun getPrivateCommentsForPostOwner(postID: String, postOwnerUID: String,
+                                       onComplete: (ArrayList<CommentStructure>?) -> Unit) {
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .get()
+            .addOnSuccessListener { documents ->
+                Log.d("documents are:", "$documents")
+                if (!documents.isEmpty){
+                    for (doc in documents){
+                        mFireStore.collection(Constants.USERS)
+                            .document(postOwnerUID)
+                            .collection(Constants.Posts)
+                            .document(postID)
+                            .collection("UIDs")
+                            .document(doc.id)
+                            .collection("privateComments")
+                            .get()
+                            .addOnSuccessListener { docs ->
+                                if (!docs.isEmpty){
+                                    Log.d("private comments are:", "$docs")
+                                    val comments = ArrayList<CommentStructure>()
+                                    for (i in docs){
+                                        comments.add(i.toObject(CommentStructure::class.java))
+                                    }
+                                    Log.d("------private comments are:", "$comments")
+                                    onComplete(comments)
+                                }else{
+                                    onComplete(null)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(null)
+                                Log.e("error getting private comments for post owner", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getting private comments for post owner", e.message.toString(), e)
+            }
+    }
+
+    fun getPrivateCommentsForViewerUser(postID: String, postOwnerUID: String, currentUserID: String,
+                           onComplete: (ArrayList<CommentStructure>?) -> Unit){
+        val documentUID = mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(currentUserID)
+
+        documentUID.get()
+            .addOnSuccessListener { documentSnapshot ->
+                if (documentSnapshot.exists()){
+                    documentUID.collection("privateComments")
+                        .get()
+                        .addOnSuccessListener { documents ->
+                            if (!documents.isEmpty){
+                                val comments = ArrayList<CommentStructure>()
+                                for (doc in documents){
+                                    comments.add(doc.toObject(CommentStructure::class.java))
+                                }
+                                onComplete(comments)
+                            }else{
+                                onComplete(null)
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            onComplete(null)
+                            Log.e("error getting private comments level 2", e.message.toString(), e)
+                        }
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getting private comments level 1", e.message.toString(), e)
+            }
+    }
+
+    fun getNumberOfLikesForPrivateComment(postOwnerUID: String, postID: String, commentID: String,
+                                          writerOfCommentUID: String, callback: (Int?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    callback(documents.size())
+                }else{
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(null)
+                Log.e("error getting number of likes for private comment", e.message.toString(), e)
+            }
+    }
+
+    fun getLikeSituationForPrivateComment(postOwnerUID: String, postID: String, commentID: String,
+                                          writerOfCommentUID: String, currentUserID: String,
+                                          onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()){
+                    onComplete(true)
+                }else{
+                    onComplete(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error getting like situation for private comment", e.message.toString(), e)
+            }
+    }
+
+    fun unLikePrivateComment(postOwnerUID: String, postID: String, commentID: String,
+                           writerOfCommentUID: String, currentUserID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error while UnLiking private comment", e.message.toString(), e)
+            }
+    }
+
+    fun likePrivateComment(postOwnerUID: String, postID: String, commentID: String,
+                           writerOfCommentUID: String, currentUserID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .set(mapOf("userID" to currentUserID))
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error while like private comment", e.message.toString(), e)
+            }
+    }
+
+    fun deletePrivateComment(postOwnerUID: String, postID: String, writerOfCommentUID: String,
+                             commentID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleting private comment", e.message.toString(), e)
+            }
+    }
+
+    fun updatePrivateComment(postOwnerUID: String, postID: String, writerOfCommentUID: String,
+                             commentID: String, commentHashMap: HashMap<String, Any>,
+                             onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .update(commentHashMap)
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error updating private comment", e.message.toString(), e)
+            }
+    }
+
+    fun addNewPrivateComment(postID: String, postOwnerUID: String,
+                             comment: CommentStructure, onComplete: (Boolean) -> Unit){
+        val documentUID = mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(comment.writerUID)
+
+        documentUID.set(mapOf("userID" to comment.writerUID))
+            .addOnSuccessListener {
+                documentUID.collection("privateComments").add(comment)
+                    .addOnSuccessListener { documentReference ->
+                        val commentID = documentReference.id
+
+                        documentUID.collection("privateComments").document(commentID)
+                            .update("commentID", commentID)
+                            .addOnSuccessListener {
+                                onComplete(true)
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error adding new private comment", e.message.toString(), e)
+                            }
+                    }
+                    .addOnFailureListener { e ->
+                        onComplete(false)
+                        Log.e("error adding new private comment", e.message.toString(), e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error adding new private comment", e.message.toString(), e)
+            }
+    }
+
+    fun getPublicComments(postOwnerUID: String, postID: String,
+                          onComplete: (ArrayList<CommentStructure>?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    val comments = ArrayList<CommentStructure>()
+                    for (doc in documents){
+                        comments.add(doc.toObject(CommentStructure::class.java))
+                    }
+                    onComplete(comments)
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getting public comments", e.message.toString(), e)
+            }
+    }
+
+    fun deletePublicComment(postOwnerUID: String, postID: String, commentID: String,
+                            onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleting public comment", e.message.toString(), e)
+            }
+    }
+
+    fun updatePublicComment(postOwnerUID: String, postID: String, commentID: String,
+                            commentHashMap: HashMap<String, Any>,
+                            onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .update(commentHashMap)
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error updating public comment", e.message.toString(), e)
+            }
+    }
+
+    fun addNewPublicComment(postID: String, postOwnerUID: String, comment: CommentStructure,
+                             onComplete: (Boolean) -> Unit){
+        val publicCommentsCollection = mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+
+        publicCommentsCollection.add(comment)
+            .addOnSuccessListener { documentReference ->
+                val commentID = documentReference.id
+
+                publicCommentsCollection.document(commentID).update("commentID", commentID)
+                    .addOnSuccessListener {
+                        onComplete(true)
+                    }
+                    .addOnFailureListener { e ->
+                        onComplete(false)
+                        Log.e("error adding new public comment", e.message.toString(), e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error adding new public comment", e.message.toString(), e)
+            }
+    }
+
+    fun likePublicComment(postOwnerUID: String, postID: String, commentID: String,
+                          currentUserID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .set(mapOf("userID" to currentUserID))
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error while like public comment", e.message.toString(), e)
+            }
+    }
+
+    fun unLikePublicComment(postOwnerUID: String, postID: String, commentID: String,
+                          currentUserID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error while unLiking public comment", e.message.toString(), e)
+            }
+    }
+
+    fun getLikeSituationForPublicComment(postOwnerUID: String, postID: String, commentID: String,
+                                         currentUserID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()){
+                    onComplete(true)
+                }else{
+                    onComplete(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error getting like situation for public comment", e.message.toString(), e)
+            }
+    }
+
+    fun getNumberOfLikesForPublicComment(postOwnerUID: String, postID: String, commentID: String,
+                                         callback: (Int?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    callback(documents.size())
+                }else{
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(null)
+                Log.e("error getting number of likes for public comment", e.message.toString(), e)
+            }
+    }
+
+    fun likePost(currentUserID: String, postID: String, postOwnerUID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("likes")
+            .document(currentUserID)
+            .set(mapOf("userID" to currentUserID))
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error while like a post", e.message.toString(), e)
+            }
+    }
+
+    fun unLikePost(currentUserID: String, postID: String, postOwnerUID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("likes")
+            .document(currentUserID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error while UnLike a post", e.message.toString(), e)
+            }
+    }
+
+    fun getLikeSituationForPost(currentUserID: String, postID: String, postOwnerUID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("likes")
+            .document(currentUserID)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()){
+                    onComplete(true)
+                }else{
+                    onComplete(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error getting like situation", e.message.toString(), e)
+            }
+    }
+
+    fun getNumberOfLikesForPost(postID: String, postOwnerUID: String, callback: (Int?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    callback(documents.size())
+                }else{
+                    callback(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                callback(null)
+                Log.e("error getting number of likes", e.message.toString(), e)
+            }
+    }
 
 
     fun updatePostOnFireStore(activity: Activity, userID: String, postHashMap: HashMap<String, Any>,
@@ -829,6 +1402,12 @@ class FireStoreClass {
                     is EditPostActivity -> {
                         activity.uploadImageOnCloudSuccess(Uri.toString())
                     }
+                    is CommentsActivity -> {
+                        activity.uploadImageOnCloudSuccess(Uri.toString())
+                    }
+                    is EditCommentActivity -> {
+                        activity.uploadImageOnCloudSuccess(Uri.toString())
+                    }
                 }
             }
         }.addOnFailureListener { e ->
@@ -841,6 +1420,12 @@ class FireStoreClass {
                     activity.hideProgressDialog()
                 }
                 is EditPostActivity -> {
+                    activity.hideProgressDialog()
+                }
+                is CommentsActivity -> {
+                    activity.hideProgressDialog()
+                }
+                is EditCommentActivity -> {
                     activity.hideProgressDialog()
                 }
             }

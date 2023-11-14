@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:scrollbars="none"
+    tools:context=".EditCommentActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="top"
+        android:layout_margin="4dp"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/tv_comment_text_edit"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="wrap_content"
+                android:gravity="start|top"
+                android:padding="10dp"
+                android:visibility="visible"
+                android:textSize="20sp"
+                android:textColor="#2b2d42"/>
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_comment_edit"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="wrap_content"
+                android:gravity="start|top"
+                android:padding="10dp"
+                android:textSize="20sp"
+                android:textColor="#2b2d42"
+                android:inputType="textMultiLine"
+                android:visibility="gone"
+                android:hint="Comment"
+                android:background="@drawable/main_edit_text_bg"/>
+
+            <ImageButton
+                android:id="@+id/ib_remove_comment_photo_edit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_baseline_remove_24"
+                android:layout_gravity="bottom"
+                android:layout_marginStart="8dp"
+                android:visibility="gone"
+                android:background="@color/white"/>
+
+            <ImageView
+                android:id="@+id/iv_comment_photo_edit"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="100dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="4dp"
+                android:visibility="visible"
+                android:src="@drawable/ic_baseline_image_24"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_time_created_comment_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:layout_gravity="start"
+            android:layout_marginTop="8dp"
+            android:textSize="12sp"
+            android:textColor="#5E5A5A"/>
+
+        <TextView
+            android:id="@+id/tv_private_comment_edit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Private Comment"
+            android:visibility="gone"
+            android:layout_gravity="start"
+            android:layout_marginTop="4dp"
+            android:textSize="12sp"
+            android:textColor="#5E5A5A"/>
+
+        <Button
+            android:id="@+id/btn_edit_and_update_comment"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="10dp"
+            android:backgroundTint="@color/white"
+            android:text="Edit"
+            android:visibility="visible"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
+
+        <Button
+            android:id="@+id/btn_cancel_editing_comment"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="10dp"
+            android:backgroundTint="@color/white"
+            android:text="Cancel"
+            android:visibility="visible"
+            android:textColor="@color/black"
+            android:textAllCaps="false"/>
+
+        <Button
+            android:id="@+id/btn_delete_comment_edit"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="30dp"
+            android:layout_marginBottom="10dp"
+            android:backgroundTint="@color/white"
+            android:text="Delete Comment"
+            android:textColor="@color/red"
+            android:visibility="gone"
+            android:textAllCaps="false"/>
+
+    </LinearLayout>
+
+</ScrollView>

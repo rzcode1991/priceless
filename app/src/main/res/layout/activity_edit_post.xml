@@ -115,7 +115,7 @@
                     android:layout_marginBottom="10dp"
                     android:backgroundTint="@color/white"
                     android:text="Cancel"
-                    android:visibility="invisible"
+                    android:visibility="visible"
                     android:textColor="@color/black"
                     android:textAllCaps="false"/>
 
@@ -130,7 +130,7 @@
                     android:backgroundTint="@color/white"
                     android:text="Delete Post"
                     android:textColor="@color/red"
-                    android:visibility="invisible"
+                    android:visibility="gone"
                     android:textAllCaps="false"/>
 
             </LinearLayout>

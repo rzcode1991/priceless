@@ -18,7 +18,8 @@
             android:id="@+id/ib_refresh_notifications"
             android:layout_width="60dp"
             android:layout_height="60dp"
-            android:layout_margin="25dp"
+            android:layout_marginEnd="25dp"
+            android:layout_marginBottom="35dp"
             android:layout_gravity="end|bottom"
             android:src="@drawable/ic_baseline_refresh_24"
             android:background="@drawable/create_background" />

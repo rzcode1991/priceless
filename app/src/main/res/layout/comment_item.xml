@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/card_view_comment_item"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="8dp"
+    android:layout_margin="5dp"
+    app:cardCornerRadius="1dp"
+    app:cardElevation="5dp"
+    android:backgroundTint="@color/white">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="5dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="start">
+
+            <ImageView
+                android:id="@+id/iv_profile_comment_item"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_margin="4dp"
+                android:layout_gravity="start|top"
+                android:src="@drawable/ic_baseline_account_circle_24"/>
+
+            <TextView
+                android:id="@+id/tv_user_name_comment_item"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_gravity="center"
+                android:layout_margin="2dp"
+                android:text="UserName"
+                android:textSize="15sp"
+                android:textColor="@color/colorPrimaryDark"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="4dp"
+            android:layout_marginEnd="4dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="4dp">
+
+            <TextView
+                android:id="@+id/tv_comment_text_comment_item"
+                android:layout_width="0dp"
+                android:layout_weight="2"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start"
+                android:text="comment text"
+                android:textSize="20sp"
+                android:padding="4dp"
+                android:textColor="@color/black"
+                android:visibility="visible" />
+
+            <ImageView
+                android:id="@+id/iv_comment_photo_comment_item"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="100dp"
+                android:layout_gravity="center|end"
+                android:layout_marginStart="4dp"
+                android:visibility="gone"
+                android:src="@drawable/white_image_background"/>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_margin="4dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_gravity="start|bottom"
+                android:gravity="start|bottom">
+
+                <TextView
+                    android:id="@+id/tv_time_created_comment_item"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Time Created"
+                    android:textSize="12sp"
+                    android:textColor="#5E5A5A"/>
+
+                <TextView
+                    android:id="@+id/tv_private_comment_item"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Private Comment"
+                    android:textSize="12sp"
+                    android:visibility="gone"
+                    android:layout_marginTop="4dp"
+                    android:textColor="#5E5A5A"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp">
+
+                <TextView
+                    android:id="@+id/tv_delete_comment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Delete"
+                    android:visibility="gone"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="20dp"/>
+
+                <TextView
+                    android:id="@+id/tv_edit_comment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Edit"
+                    android:visibility="gone"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="20dp"/>
+
+                <TextView
+                    android:id="@+id/tv_number_of_likes_comment_item"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text=""
+                    android:visibility="gone"
+                    android:layout_marginEnd="4dp"
+                    android:layout_marginTop="2.5dp"
+                    android:textSize="12sp"
+                    android:textColor="@color/black"/>
+
+                <ImageButton
+                    android:id="@+id/ib_like_comment_item"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/thumb_like"
+                    android:layout_marginEnd="20dp"
+                    android:background="@color/white"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

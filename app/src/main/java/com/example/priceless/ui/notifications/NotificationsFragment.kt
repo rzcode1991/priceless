@@ -93,12 +93,12 @@ class NotificationsFragment : Fragment() {
         if (_binding != null){
             binding.ibRefreshNotifications.setImageResource(R.drawable.ic_baseline_downloading_24)
         }
-        showProgressDialog()
+        //showProgressDialog()
         FireStoreClass().getCurrentUserID { currentUID ->
             if (currentUID.isNotEmpty()){
                 FireStoreClass().getReceivedRequests(currentUID) { requests ->
                     if (!requests.isNullOrEmpty()) {
-                        hideProgressDialog()
+                        //hideProgressDialog()
                         requests.sortByDescending { it.senderUserID }
                         if (_binding != null){
                             binding.recyclerViewNotifications.visibility = View.VISIBLE
@@ -108,21 +108,21 @@ class NotificationsFragment : Fragment() {
                             binding.ibRefreshNotifications.setImageResource(R.drawable.ic_baseline_refresh_24)
                         }
                     }else{
-                        Toast.makeText(activity, "requests is null or empty", Toast.LENGTH_LONG).show()
                         if (_binding != null){
+                            Toast.makeText(activity, "You Don't Have Any Requests.", Toast.LENGTH_LONG).show()
                             binding.ibRefreshNotifications.setImageResource(R.drawable.ic_baseline_refresh_24)
                             binding.recyclerViewNotifications.visibility = View.GONE
                         }
-                        hideProgressDialog()
+                        //hideProgressDialog()
                     }
                 }
             }else{
-                Toast.makeText(activity, "err getting current userID", Toast.LENGTH_LONG).show()
                 if (_binding != null){
+                    Toast.makeText(activity, "Error Getting Current UserID; Check Your Internet Connection", Toast.LENGTH_LONG).show()
                     binding.ibRefreshNotifications.setImageResource(R.drawable.ic_baseline_refresh_24)
                     binding.recyclerViewNotifications.visibility = View.GONE
                 }
-                hideProgressDialog()
+                //hideProgressDialog()
             }
         }
     }

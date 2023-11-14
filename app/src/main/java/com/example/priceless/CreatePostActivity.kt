@@ -41,7 +41,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private var dateNow: String = ""
     private var secondsNow: String = ""
     private var getTime: GetTime? = null
-    private var dateAndTimePair: Pair<String?, String?>? = null
+    private lateinit var dateAndTimePair: Pair<String, String>
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 
 
@@ -58,7 +58,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         ivPostImage = findViewById(R.id.iv_post_image_create_post)
         tvSendPost = findViewById(R.id.tv_send_post_create_post)
 
-        getTime = GetTime()
+        //getTime = GetTime()
 
         showProgressDialog()
         val userID = FireStoreClass().getUserID()
@@ -72,8 +72,8 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                 btnSelectDate.visibility = VISIBLE
                 btnSelectDate.setOnClickListener(this@CreatePostActivity)
             } else {
-                btnSelectDate.visibility = View.INVISIBLE
-                tvSelectedDate.visibility = View.INVISIBLE
+                btnSelectDate.visibility = View.GONE
+                tvSelectedDate.visibility = View.GONE
                 finalTimeInMillis = ""
             }
         }
@@ -85,7 +85,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private suspend fun createPost() {
         getTimeNow()
         if (secondsNow.isEmpty() || dateNow.isEmpty()){
-            showErrorSnackBar("error getting time online, try again", true)
+            showErrorSnackBar("Error Getting Time; Check Your Internet Connection", true)
             hideProgressDialog()
         }else{
             val profilePicture = userInfo.image
@@ -125,7 +125,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         val sortedPosts = Constants.sortedPosts
         sortedPosts[newPost.timeCreatedMillis] = newPost
         hideProgressDialog()
-        Toast.makeText(this, "your post was sent successfully", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Your Post Was Sent Successfully", Toast.LENGTH_LONG).show()
         val intent = Intent(this@CreatePostActivity, FragmentActivity::class.java)
         startActivity(intent)
         finish()
@@ -198,7 +198,8 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
 
 
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
+                                            grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == Constants.PermissionExternalStorageCode){
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
@@ -240,7 +241,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             return false
         }
 
-        if (postText.length > 1000){
+        if (postText.length > 2000){
             showErrorSnackBar("Post Text Too Long.", true)
             return false
         }
@@ -269,12 +270,19 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     }
 
 
-    private suspend fun getTimeNow(){
-        dateAndTimePair = getTime?.getCurrentTimeAndDate()
-        if (dateAndTimePair != null){
-            if (dateAndTimePair!!.first != null && dateAndTimePair!!.second != null){
-                dateNow = dateAndTimePair!!.first!!
-                secondsNow = dateAndTimePair!!.second!!
+    private suspend fun getTimeNow() {
+        val result = GetTime().getCurrentTimeAndDate()
+
+        if (result.isSuccess) {
+            val dateAndTimePair = result.getOrNull()
+            if (dateAndTimePair != null) {
+                dateNow = dateAndTimePair.first
+                secondsNow = dateAndTimePair.second
+            }
+        } else {
+            val exception = result.exceptionOrNull()
+            if (exception != null) {
+                Log.e("Error getting time", exception.message.toString(), exception)
             }
         }
     }
@@ -286,7 +294,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         getTimeNow()
         hideProgressDialog()
         if (dateNow.isEmpty() || secondsNow.isEmpty()){
-            showErrorSnackBar("error getting time online, try again", true)
+            showErrorSnackBar("Error Getting Time; Check Your Internet Connection", true)
         }else{
             val onlineTime = dateNow
             val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())

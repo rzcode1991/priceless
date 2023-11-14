@@ -22,10 +22,8 @@ class GetTime {
         "http://api.timezonedb.com/v2.1/get-time-zone?key=3DP6C4MVV1ZV&format=json&by=zone&zone=Asia/Tehran"
 
 
-    suspend fun getCurrentTimeAndDate(): Pair<String?, String?>? {
+    suspend fun getCurrentTimeAndDate(): Result<Pair<String, String>> {
         return withContext(Dispatchers.IO) {
-            var dateAndTimePair: Pair<String?, String?>? = null
-
             try {
                 val request = Request.Builder()
                     .url(apiEndpoint)
@@ -34,9 +32,7 @@ class GetTime {
                 if (response.isSuccessful) {
                     val responseBody = response.body?.string()
                     if (!responseBody.isNullOrEmpty()) {
-                        Log.d("full response", responseBody)
                         val jsonObject = JSONObject(responseBody)
-
                         val dateTime = jsonObject.optString("formatted")
                         val dateTimeUnix = jsonObject.optLong("timestamp", 0L)
                         val gmtOffset = jsonObject.optLong("gmtOffset", 0L)
@@ -45,20 +41,24 @@ class GetTime {
                             val millisInString = (dateTimeUnix - gmtOffset).toString()
                             Log.d("Extracted date_time", "dateTime: $dateTime millis: $millisInString")
 
-                            dateAndTimePair = Pair(dateTime, millisInString)
+                            val dateAndTimePair = Pair(dateTime, millisInString)
+                            Result.success(dateAndTimePair)
+                        } else {
+                            Result.failure(Exception("Error parsing the response"))
                         }
+                    } else {
+                        Result.failure(Exception("${response.code} ${response.message}"))
                     }
                 } else {
-                    Log.e("http request failed", "${response.code} ${response.message}")
+                    Result.failure(Exception("${response.code} ${response.message}"))
                 }
             } catch (e: SocketTimeoutException) {
-                Log.e("http request failed", "Socket timeout error: ${e.message}")
+                Result.failure(e)
             } catch (e: IOException) {
-                Log.e("http request failed", "IO error: ${Log.getStackTraceString(e)}")
+                Result.failure(e)
             } catch (e: Exception) {
-                Log.e("http request failed", "Unknown error: ${Log.getStackTraceString(e)}")
+                Result.failure(e)
             }
-            dateAndTimePair
         }
     }
 
