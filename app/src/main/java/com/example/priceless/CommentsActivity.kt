@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -222,6 +221,8 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     val timeCreated = secondsNow
                     val timeCreatedToShow = dateNow
                     val postID = post.postID
+                    val topCommentIDForReply = ""
+                    val writerOfTopCommentUID = ""
                     val postOwnerUID = post.userId
                     val writerUID = currentUserID
                     val writerUserName = ""
@@ -230,7 +231,8 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     val edited = false
                     val commentID = ""
                     val newComment = CommentStructure(text, commentPhoto, timeCreated, timeCreatedToShow,
-                        postID, postOwnerUID, writerUID, writerUserName, writerProfilePic, isPrivate, edited, commentID)
+                        postID, topCommentIDForReply, writerOfTopCommentUID, postOwnerUID, writerUID,
+                        writerUserName, writerProfilePic, isPrivate, edited, commentID)
                     if (isPrivate){
                         FireStoreClass().addNewPrivateComment(postID, post.userId,
                             newComment) { success ->
@@ -372,7 +374,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                 progressBar.visibility = View.GONE
                 rvComments.visibility = VISIBLE
                 val adapter = CommentsRvAdapter(this@CommentsActivity, commentsToShow,
-                    currentUserID, this@CommentsActivity)
+                    currentUserID)
                 adapter.notifyDataSetChanged()
                 val layOutManager = LinearLayoutManager(this@CommentsActivity)
                 rvComments.layoutManager = layOutManager
@@ -382,7 +384,6 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                 progressBar.visibility = View.GONE
                 Toast.makeText(this@CommentsActivity, "There Is No Comment For This Post", Toast.LENGTH_SHORT).show()
             }
-
         }
     }
 

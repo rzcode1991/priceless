@@ -144,6 +144,18 @@
                     android:layout_marginEnd="20dp"/>
 
                 <TextView
+                    android:id="@+id/tv_reply_comment"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Reply"
+                    android:visibility="gone"
+                    android:textColor="@color/black"
+                    android:textSize="14sp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginEnd="20dp"/>
+
+                <TextView
                     android:id="@+id/tv_number_of_likes_comment_item"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

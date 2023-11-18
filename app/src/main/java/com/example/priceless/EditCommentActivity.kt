@@ -134,7 +134,7 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
                                 FireStoreClass().uploadImageToCloudStorage(this, imageURI!!,
                                     "comment_image")
                             }else{
-                                updatePost()
+                                updateComment()
                             }
                         }
                     }
@@ -152,35 +152,17 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
                             showProgressDialog()
                             when{
                                 comment.isPrivate -> {
-                                    FireStoreClass().deletePrivateComment(comment.postOwnerUID,
-                                        comment.postID, comment.writerUID, comment.commentID) { onComplete ->
-                                        if (onComplete){
-                                            if (comment.commentPhoto.isNotEmpty()){
-                                                FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
-                                            }
-                                            hideProgressDialog()
-                                            Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
-                                            finish()
-                                        }else{
-                                            hideProgressDialog()
-                                            showErrorSnackBar("Error While Deleting Comment.", true)
-                                        }
+                                    if (comment.topCommentIDForReply.isNotEmpty()){
+                                        deletePrivateReply()
+                                    }else{
+                                        deletePrivateComment()
                                     }
                                 }
                                 else -> {
-                                    FireStoreClass().deletePublicComment(comment.postOwnerUID,
-                                        comment.postID, comment.commentID) { success ->
-                                        if (success){
-                                            if (comment.commentPhoto.isNotEmpty()){
-                                                FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
-                                            }
-                                            hideProgressDialog()
-                                            Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
-                                            finish()
-                                        }else{
-                                            hideProgressDialog()
-                                            showErrorSnackBar("Error While Deleting Comment.", true)
-                                        }
+                                    if (comment.topCommentIDForReply.isNotEmpty()){
+                                        deletePublicReply()
+                                    }else{
+                                        deletePublicComment()
                                     }
                                 }
                             }
@@ -202,7 +184,7 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
             FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
         }
         newImageNameUrl = newImageUrl
-        updatePost()
+        updateComment()
     }
 
 
@@ -245,7 +227,7 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
         }
     }
 
-    private fun updatePost(){
+    private fun updateComment(){
         CoroutineScope(Dispatchers.Main).launch {
             val timeJob = async { getTimeNow() }
             timeJob.await()
@@ -263,30 +245,125 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
                 commentHashMap["timeCreated"] = secondsNow
                 commentHashMap["edited"] = true
                 if (comment.isPrivate){
-                    FireStoreClass().updatePrivateComment(comment.postOwnerUID, comment.postID,
-                        comment.writerUID, comment.commentID, commentHashMap) { onSuccess ->
-                        if (onSuccess){
-                            hideProgressDialog()
-                            Toast.makeText(this@EditCommentActivity, "Comment Updated Successfully", Toast.LENGTH_LONG).show()
-                            finish()
-                        }else{
-                            hideProgressDialog()
-                            showErrorSnackBar("Error While Updating Comment.", true)
+                    if (comment.topCommentIDForReply.isNotEmpty()){
+                        FireStoreClass().updatePrivateReply(comment, commentHashMap) { onSuccess ->
+                            if (onSuccess){
+                                hideProgressDialog()
+                                Toast.makeText(this@EditCommentActivity, "Reply Updated Successfully", Toast.LENGTH_LONG).show()
+                                finish()
+                            }else{
+                                hideProgressDialog()
+                                showErrorSnackBar("Error While Updating Reply.", true)
+                            }
+                        }
+                        //
+                    }else{
+                        FireStoreClass().updatePrivateComment(comment.postOwnerUID, comment.postID,
+                            comment.writerUID, comment.commentID, commentHashMap) { onSuccess ->
+                            if (onSuccess){
+                                hideProgressDialog()
+                                Toast.makeText(this@EditCommentActivity, "Comment Updated Successfully", Toast.LENGTH_LONG).show()
+                                finish()
+                            }else{
+                                hideProgressDialog()
+                                showErrorSnackBar("Error While Updating Comment.", true)
+                            }
                         }
                     }
                 }else{
-                    FireStoreClass().updatePublicComment(comment.postOwnerUID, comment.postID,
-                        comment.commentID, commentHashMap) { succeed ->
-                        if (succeed){
-                            hideProgressDialog()
-                            Toast.makeText(this@EditCommentActivity, "Comment Updated Successfully", Toast.LENGTH_LONG).show()
-                            finish()
-                        }else{
-                            hideProgressDialog()
-                            showErrorSnackBar("Error While Updating Comment.", true)
+                    if (comment.topCommentIDForReply.isNotEmpty()){
+                        FireStoreClass().updatePublicReply(comment, commentHashMap) { succeed ->
+                            if (succeed){
+                                hideProgressDialog()
+                                Toast.makeText(this@EditCommentActivity, "Reply Updated Successfully", Toast.LENGTH_LONG).show()
+                                finish()
+                            }else{
+                                hideProgressDialog()
+                                showErrorSnackBar("Error While Updating Reply.", true)
+                            }
+                        }
+                        //
+                    }else{
+                        FireStoreClass().updatePublicComment(comment.postOwnerUID, comment.postID,
+                            comment.commentID, commentHashMap) { succeed ->
+                            if (succeed){
+                                hideProgressDialog()
+                                Toast.makeText(this@EditCommentActivity, "Comment Updated Successfully", Toast.LENGTH_LONG).show()
+                                finish()
+                            }else{
+                                hideProgressDialog()
+                                showErrorSnackBar("Error While Updating Comment.", true)
+                            }
                         }
                     }
                 }
+            }
+        }
+    }
+
+
+    private fun deletePublicReply(){
+        FireStoreClass().deletePublicReply(comment) { success ->
+            if (success){
+                if (comment.commentPhoto.isNotEmpty()){
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                }
+                hideProgressDialog()
+                Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
+                finish()
+            }else{
+                hideProgressDialog()
+                showErrorSnackBar("Error While Deleting Reply.", true)
+            }
+        }
+    }
+
+    private fun deletePublicComment(){
+        FireStoreClass().deletePublicComment(comment.postOwnerUID,
+            comment.postID, comment.commentID) { success ->
+            if (success){
+                if (comment.commentPhoto.isNotEmpty()){
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                }
+                hideProgressDialog()
+                Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
+                finish()
+            }else{
+                hideProgressDialog()
+                showErrorSnackBar("Error While Deleting Comment.", true)
+            }
+        }
+    }
+
+    private fun deletePrivateComment(){
+        FireStoreClass().deletePrivateComment(comment.postOwnerUID,
+            comment.postID, comment.writerUID, comment.commentID) { onComplete ->
+            if (onComplete){
+                if (comment.commentPhoto.isNotEmpty()){
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                }
+                hideProgressDialog()
+                Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
+                finish()
+            }else{
+                hideProgressDialog()
+                showErrorSnackBar("Error While Deleting Comment.", true)
+            }
+        }
+    }
+
+    private fun deletePrivateReply(){
+        FireStoreClass().deletePrivateReply(comment) { onComplete ->
+            if (onComplete){
+                if (comment.commentPhoto.isNotEmpty()){
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                }
+                hideProgressDialog()
+                Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
+                finish()
+            }else{
+                hideProgressDialog()
+                showErrorSnackBar("Error While Deleting Reply.", true)
             }
         }
     }

@@ -21,8 +21,7 @@ import com.google.android.material.textfield.TextInputEditText
 
 class CommentsRvAdapter(val context: Context,
                         private val commentsList: ArrayList<CommentStructure>,
-                        private val currentUserID: String,
-                        private val commentsActivity: CommentsActivity):
+                        private val currentUserID: String):
     RecyclerView.Adapter<CommentsRvAdapter.CommentViewHolder>(){
 
 
@@ -73,60 +72,119 @@ class CommentsRvAdapter(val context: Context,
 
         if (comment.isPrivate){
             holder.tvPrivateComment.visibility = View.VISIBLE
-            FireStoreClass().getNumberOfLikesForPrivateComment(comment.postOwnerUID, comment.postID,
-                comment.commentID, comment.writerUID) { number ->
-                if (number != null && number != 0){
-                    holder.tvNumberOfLikes.visibility = View.VISIBLE
-                    holder.tvNumberOfLikes.text = "$number"
-                }else{
-                    holder.tvNumberOfLikes.visibility = View.GONE
+            if (comment.topCommentIDForReply.isNotEmpty()){
+                holder.tvPrivateComment.text = "Private Reply"
+                FireStoreClass().getNumberOfLikesForPrivateReply(comment) { number ->
+                    if (number != null && number != 0){
+                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                        holder.tvNumberOfLikes.text = "$number"
+                    }else{
+                        holder.tvNumberOfLikes.visibility = View.GONE
+                    }
                 }
-            }
 
-            var likeSituationForPrivateComment = false
+                var likeSituationForPrivateReply = false
 
-            FireStoreClass().getLikeSituationForPrivateComment(comment.postOwnerUID, comment.postID,
-                comment.commentID, comment.writerUID, currentUserID) { yep ->
-                if (yep){
-                    likeSituationForPrivateComment = true
-                    holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
-                }else{
-                    likeSituationForPrivateComment = false
-                    holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                FireStoreClass().getLikeSituationForPrivateReply(comment, currentUserID) { yep ->
+                    if (yep){
+                        likeSituationForPrivateReply = true
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                    }else{
+                        likeSituationForPrivateReply = false
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                    }
                 }
-            }
 
-            holder.ibLikeComment.setOnClickListener {
-                if (likeSituationForPrivateComment){
-                    FireStoreClass().unLikePrivateComment(comment.postOwnerUID, comment.postID,
-                        comment.commentID, comment.writerUID, currentUserID) { onSuccess ->
-                        if (onSuccess){
-                            likeSituationForPrivateComment = false
-                            holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
-                            FireStoreClass().getNumberOfLikesForPrivateComment(comment.postOwnerUID, comment.postID,
-                                comment.commentID, comment.writerUID) { number ->
-                                if (number != null && number != 0){
-                                    holder.tvNumberOfLikes.visibility = View.VISIBLE
-                                    holder.tvNumberOfLikes.text = "$number"
-                                }else{
-                                    holder.tvNumberOfLikes.visibility = View.GONE
+                holder.ibLikeComment.setOnClickListener {
+                    if (likeSituationForPrivateReply){
+                        FireStoreClass().unlikePrivateReply(comment, currentUserID) { onSuccess ->
+                            if (onSuccess){
+                                likeSituationForPrivateReply = false
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                                FireStoreClass().getNumberOfLikesForPrivateReply(comment) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
+                                }
+                            }
+                        }
+                    }else{
+                        FireStoreClass().likePrivateReply(comment, currentUserID) { success ->
+                            if (success){
+                                likeSituationForPrivateReply = true
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                                FireStoreClass().getNumberOfLikesForPrivateReply(comment) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
                                 }
                             }
                         }
                     }
-                }else{
-                    FireStoreClass().likePrivateComment(comment.postOwnerUID, comment.postID,
-                        comment.commentID, comment.writerUID, currentUserID) { success ->
-                        if (success){
-                            likeSituationForPrivateComment = true
-                            holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
-                            FireStoreClass().getNumberOfLikesForPrivateComment(comment.postOwnerUID, comment.postID,
-                                comment.commentID, comment.writerUID) { number ->
-                                if (number != null && number != 0){
-                                    holder.tvNumberOfLikes.visibility = View.VISIBLE
-                                    holder.tvNumberOfLikes.text = "$number"
-                                }else{
-                                    holder.tvNumberOfLikes.visibility = View.GONE
+                }
+                //
+            }else{
+                FireStoreClass().getNumberOfLikesForPrivateComment(comment.postOwnerUID, comment.postID,
+                    comment.commentID, comment.writerUID) { number ->
+                    if (number != null && number != 0){
+                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                        holder.tvNumberOfLikes.text = "$number"
+                    }else{
+                        holder.tvNumberOfLikes.visibility = View.GONE
+                    }
+                }
+
+                var likeSituationForPrivateComment = false
+
+                FireStoreClass().getLikeSituationForPrivateComment(comment.postOwnerUID, comment.postID,
+                    comment.commentID, comment.writerUID, currentUserID) { yep ->
+                    if (yep){
+                        likeSituationForPrivateComment = true
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                    }else{
+                        likeSituationForPrivateComment = false
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                    }
+                }
+
+                holder.ibLikeComment.setOnClickListener {
+                    if (likeSituationForPrivateComment){
+                        FireStoreClass().unLikePrivateComment(comment.postOwnerUID, comment.postID,
+                            comment.commentID, comment.writerUID, currentUserID) { onSuccess ->
+                            if (onSuccess){
+                                likeSituationForPrivateComment = false
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                                FireStoreClass().getNumberOfLikesForPrivateComment(comment.postOwnerUID, comment.postID,
+                                    comment.commentID, comment.writerUID) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
+                                }
+                            }
+                        }
+                    }else{
+                        FireStoreClass().likePrivateComment(comment.postOwnerUID, comment.postID,
+                            comment.commentID, comment.writerUID, currentUserID) { success ->
+                            if (success){
+                                likeSituationForPrivateComment = true
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                                FireStoreClass().getNumberOfLikesForPrivateComment(comment.postOwnerUID, comment.postID,
+                                    comment.commentID, comment.writerUID) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
                                 }
                             }
                         }
@@ -135,60 +193,118 @@ class CommentsRvAdapter(val context: Context,
             }
         }else{
             holder.tvPrivateComment.visibility = View.GONE
-            FireStoreClass().getNumberOfLikesForPublicComment(comment.postOwnerUID, comment.postID,
-                comment.commentID) { number ->
-                if (number != null && number != 0){
-                    holder.tvNumberOfLikes.visibility = View.VISIBLE
-                    holder.tvNumberOfLikes.text = "$number"
-                }else{
-                    holder.tvNumberOfLikes.visibility = View.GONE
+            if (comment.topCommentIDForReply.isNotEmpty()){
+                FireStoreClass().getNumberOfLikesForPublicReply(comment) { number ->
+                    if (number != null && number != 0){
+                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                        holder.tvNumberOfLikes.text = "$number"
+                    }else{
+                        holder.tvNumberOfLikes.visibility = View.GONE
+                    }
                 }
-            }
 
-            var likeSituationForPublicComment = false
+                var likeSituationForPublicReply = false
 
-            FireStoreClass().getLikeSituationForPublicComment(comment.postOwnerUID, comment.postID,
-                comment.commentID, currentUserID) { yep ->
-                if (yep){
-                    likeSituationForPublicComment = true
-                    holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
-                }else{
-                    likeSituationForPublicComment = false
-                    holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                FireStoreClass().getLikeSituationForPublicReply(comment, currentUserID) { yep ->
+                    if (yep){
+                        likeSituationForPublicReply = true
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                    }else{
+                        likeSituationForPublicReply = false
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                    }
                 }
-            }
 
-            holder.ibLikeComment.setOnClickListener {
-                if (likeSituationForPublicComment){
-                    FireStoreClass().unLikePublicComment(comment.postOwnerUID, comment.postID,
-                        comment.commentID, currentUserID) { onSuccess ->
-                        if (onSuccess){
-                            likeSituationForPublicComment = false
-                            holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
-                            FireStoreClass().getNumberOfLikesForPublicComment(comment.postOwnerUID,
-                                comment.postID, comment.commentID) { number ->
-                                if (number != null && number != 0){
-                                    holder.tvNumberOfLikes.visibility = View.VISIBLE
-                                    holder.tvNumberOfLikes.text = "$number"
-                                }else{
-                                    holder.tvNumberOfLikes.visibility = View.GONE
+                holder.ibLikeComment.setOnClickListener {
+                    if (likeSituationForPublicReply){
+                        FireStoreClass().unlikePublicReply(comment, currentUserID) { onSuccess ->
+                            if (onSuccess){
+                                likeSituationForPublicReply = false
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                                FireStoreClass().getNumberOfLikesForPublicReply(comment) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
+                                }
+                            }
+                        }
+                    }else{
+                        FireStoreClass().likePublicReply(comment, currentUserID) { success ->
+                            if (success){
+                                likeSituationForPublicReply = true
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                                FireStoreClass().getNumberOfLikesForPublicReply(comment) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
                                 }
                             }
                         }
                     }
-                }else{
-                    FireStoreClass().likePublicComment(comment.postOwnerUID, comment.postID,
-                        comment.commentID, currentUserID) { success ->
-                        if (success){
-                            likeSituationForPublicComment = true
-                            holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
-                            FireStoreClass().getNumberOfLikesForPublicComment(comment.postOwnerUID,
-                                comment.postID, comment.commentID) { number ->
-                                if (number != null && number != 0){
-                                    holder.tvNumberOfLikes.visibility = View.VISIBLE
-                                    holder.tvNumberOfLikes.text = "$number"
-                                }else{
-                                    holder.tvNumberOfLikes.visibility = View.GONE
+                }
+                //
+            }else{
+                FireStoreClass().getNumberOfLikesForPublicComment(comment.postOwnerUID, comment.postID,
+                    comment.commentID) { number ->
+                    if (number != null && number != 0){
+                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                        holder.tvNumberOfLikes.text = "$number"
+                    }else{
+                        holder.tvNumberOfLikes.visibility = View.GONE
+                    }
+                }
+
+                var likeSituationForPublicComment = false
+
+                FireStoreClass().getLikeSituationForPublicComment(comment.postOwnerUID, comment.postID,
+                    comment.commentID, currentUserID) { yep ->
+                    if (yep){
+                        likeSituationForPublicComment = true
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                    }else{
+                        likeSituationForPublicComment = false
+                        holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                    }
+                }
+
+                holder.ibLikeComment.setOnClickListener {
+                    if (likeSituationForPublicComment){
+                        FireStoreClass().unLikePublicComment(comment.postOwnerUID, comment.postID,
+                            comment.commentID, currentUserID) { onSuccess ->
+                            if (onSuccess){
+                                likeSituationForPublicComment = false
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_like)
+                                FireStoreClass().getNumberOfLikesForPublicComment(comment.postOwnerUID,
+                                    comment.postID, comment.commentID) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
+                                }
+                            }
+                        }
+                    }else{
+                        FireStoreClass().likePublicComment(comment.postOwnerUID, comment.postID,
+                            comment.commentID, currentUserID) { success ->
+                            if (success){
+                                likeSituationForPublicComment = true
+                                holder.ibLikeComment.setImageResource(R.drawable.thumb_liked)
+                                FireStoreClass().getNumberOfLikesForPublicComment(comment.postOwnerUID,
+                                    comment.postID, comment.commentID) { number ->
+                                    if (number != null && number != 0){
+                                        holder.tvNumberOfLikes.visibility = View.VISIBLE
+                                        holder.tvNumberOfLikes.text = "$number"
+                                    }else{
+                                        holder.tvNumberOfLikes.visibility = View.GONE
+                                    }
                                 }
                             }
                         }
@@ -205,47 +321,88 @@ class CommentsRvAdapter(val context: Context,
                 builder.setMessage("comment will be deleted permanently!")
                 builder.setIcon(R.drawable.ic_round_warning_24)
                 builder.setPositiveButton("Yes") { dialog, _ ->
+                    showProgressDialog()
                     if (comment.isPrivate){
-                        showProgressDialog()
-                        FireStoreClass().deletePrivateComment(comment.postOwnerUID, comment.postID,
-                            comment.writerUID, comment.commentID) { success ->
-                            dialog.dismiss()
-                            hideProgressDialog()
-                            if (success){
-                                if (comment.commentPhoto.isNotEmpty()){
-                                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                        if (comment.topCommentIDForReply.isNotEmpty()){
+                            FireStoreClass().deletePrivateReply(comment) { success ->
+                                dialog.dismiss()
+                                hideProgressDialog()
+                                if (success){
+                                    if (comment.commentPhoto.isNotEmpty()){
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                    }
+                                    val itemPosition = commentsList.indexOf(comment)
+                                    if (itemPosition != -1) {
+                                        commentsList.removeAt(itemPosition)
+                                        notifyItemRemoved(itemPosition)
+                                    }
+                                    Toast.makeText(context, "Reply Deleted.", Toast.LENGTH_SHORT).show()
+                                }else{
+                                    Toast.makeText(context, "Error While Deleting Reply.", Toast.LENGTH_SHORT).show()
                                 }
-                                val itemPosition = commentsList.indexOf(comment)
-                                if (itemPosition != -1) {
-                                    commentsList.removeAt(itemPosition)
-                                    notifyItemRemoved(itemPosition)
+                            }
+                            //
+                        }else{
+                            FireStoreClass().deletePrivateComment(comment.postOwnerUID, comment.postID,
+                                comment.writerUID, comment.commentID) { success ->
+                                dialog.dismiss()
+                                hideProgressDialog()
+                                if (success){
+                                    if (comment.commentPhoto.isNotEmpty()){
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                    }
+                                    val itemPosition = commentsList.indexOf(comment)
+                                    if (itemPosition != -1) {
+                                        commentsList.removeAt(itemPosition)
+                                        notifyItemRemoved(itemPosition)
+                                    }
+                                    Toast.makeText(context, "Comment Deleted.", Toast.LENGTH_SHORT).show()
+                                }else{
+                                    Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                                 }
-                                Toast.makeText(context, "Comment Deleted.", Toast.LENGTH_SHORT).show()
-                            }else{
-                                Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }else{
-                        showProgressDialog()
-                        FireStoreClass().deletePublicComment(comment.postOwnerUID, comment.postID,
-                            comment.commentID) { onSuccess ->
-                            dialog.dismiss()
-                            hideProgressDialog()
-                            if (onSuccess){
-                                if (comment.commentPhoto.isNotEmpty()){
-                                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                        if (comment.topCommentIDForReply.isNotEmpty()){
+                            FireStoreClass().deletePublicReply(comment) { onSuccess ->
+                                dialog.dismiss()
+                                hideProgressDialog()
+                                if (onSuccess){
+                                    if (comment.commentPhoto.isNotEmpty()){
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                    }
+                                    val commentPosition = commentsList.indexOf(comment)
+                                    if (commentPosition != -1) {
+                                        commentsList.removeAt(commentPosition)
+                                        notifyItemRemoved(commentPosition)
+                                    }
+                                    Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
+                                }else{
+                                    Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                                 }
-                                val commentPosition = commentsList.indexOf(comment)
-                                if (commentPosition != -1) {
-                                    commentsList.removeAt(commentPosition)
-                                    notifyItemRemoved(commentPosition)
+                            }
+                            //
+                        }else{
+                            FireStoreClass().deletePublicComment(comment.postOwnerUID, comment.postID,
+                                comment.commentID) { onSuccess ->
+                                dialog.dismiss()
+                                hideProgressDialog()
+                                if (onSuccess){
+                                    if (comment.commentPhoto.isNotEmpty()){
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                    }
+                                    val commentPosition = commentsList.indexOf(comment)
+                                    if (commentPosition != -1) {
+                                        commentsList.removeAt(commentPosition)
+                                        notifyItemRemoved(commentPosition)
+                                    }
+                                    //commentsList.removeAt(position)
+                                    //notifyDataSetChanged()
+                                    //holder.cardViewCommentItem.visibility = View.GONE
+                                    Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
+                                }else{
+                                    Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                                 }
-                                //commentsList.removeAt(position)
-                                //notifyDataSetChanged()
-                                //holder.cardViewCommentItem.visibility = View.GONE
-                                Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
-                            }else{
-                                Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -273,6 +430,18 @@ class CommentsRvAdapter(val context: Context,
             holder.tvEditComment.visibility = View.GONE
         }
 
+        if (comment.topCommentIDForReply.isNotEmpty()){
+            // we don't want reply for replies
+            holder.tvReply.visibility = View.GONE
+        }else{
+            holder.tvReply.visibility = View.VISIBLE
+            holder.tvReply.setOnClickListener {
+                val intent = Intent(context, ReplyCommentActivity::class.java)
+                intent.putExtra("com.example.priceless.comment", comment)
+                context.startActivity(intent)
+            }
+        }
+
     }
 
     override fun getItemCount(): Int {
@@ -290,6 +459,7 @@ class CommentsRvAdapter(val context: Context,
         val tvEditComment: TextView = itemView.findViewById(R.id.tv_edit_comment)
         val tvNumberOfLikes: TextView = itemView.findViewById(R.id.tv_number_of_likes_comment_item)
         val ibLikeComment: ImageButton = itemView.findViewById(R.id.ib_like_comment_item)
+        val tvReply: TextView = itemView.findViewById(R.id.tv_reply_comment)
         val cardViewCommentItem: CardView = itemView.findViewById(R.id.card_view_comment_item)
     }
 

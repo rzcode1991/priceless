@@ -389,6 +389,247 @@ class FireStoreClass {
 
     }
 
+    fun addPrivateReplyForPrivateCommenttttttttt(postOwnerUID: String, postID: String,
+                                         writerOfCommentUID: String, topCommentID: String,
+                                         writerOfReplyUID: String, reply: CommentStructure,
+                                         onComplete: (Boolean) -> Unit){
+        val writerOfReplyDocument = mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(topCommentID)
+            .collection("UIDsForPrivateReplies")
+            .document(writerOfReplyUID)
+
+            writerOfReplyDocument.set(mapOf("userID" to writerOfReplyUID))
+                .addOnSuccessListener {
+                    writerOfReplyDocument.collection("privateReplies").add(reply)
+                        .addOnSuccessListener { document ->
+                            val replyID = document.id
+                            writerOfReplyDocument.collection("privateReplies")
+                                .document(replyID).update("commentID", replyID)
+                                .addOnSuccessListener {
+                                    onComplete(true)
+                                }
+                                .addOnFailureListener { e ->
+                                    onComplete(false)
+                                    Log.e("error addPrivateReplyForPrivateComment", e.message.toString(), e)
+                                }
+                        }
+                        .addOnFailureListener { e ->
+                            onComplete(false)
+                            Log.e("error addPrivateReplyForPrivateComment", e.message.toString(), e)
+                        }
+                }
+                .addOnFailureListener { e ->
+                    onComplete(false)
+                    Log.e("error addPrivateReplyForPrivateComment", e.message.toString(), e)
+                }
+    }
+
+    fun likePrivateReply(reply: CommentStructure, currentUserID: String,
+                         onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("UIDs")
+            .document(reply.writerOfTopCommentUID)
+            .collection("privateComments")
+            .document(reply.topCommentIDForReply)
+            .collection("privateReplies")
+            .document(reply.commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .set(mapOf("userID" to currentUserID))
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error likePrivateReply", e.message.toString(), e)
+            }
+    }
+
+    fun unlikePrivateReply(reply: CommentStructure, currentUserID: String,
+                           onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("UIDs")
+            .document(reply.writerOfTopCommentUID)
+            .collection("privateComments")
+            .document(reply.topCommentIDForReply)
+            .collection("privateReplies")
+            .document(reply.commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+    fun getLikeSituationForPrivateReply(reply: CommentStructure, currentUserID: String,
+                                        onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("UIDs")
+            .document(reply.writerOfTopCommentUID)
+            .collection("privateComments")
+            .document(reply.topCommentIDForReply)
+            .collection("privateReplies")
+            .document(reply.commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()){
+                    onComplete(true)
+                }else{
+                    onComplete(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error getLikeSituationForPrivateReply", e.message.toString(), e)
+            }
+    }
+
+    fun getNumberOfLikesForPrivateReply(reply: CommentStructure, onComplete: (Int?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("UIDs")
+            .document(reply.writerOfTopCommentUID)
+            .collection("privateComments")
+            .document(reply.topCommentIDForReply)
+            .collection("privateReplies")
+            .document(reply.commentID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    onComplete(documents.size())
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getNumberOfLikesForPrivateReply", e.message.toString(), e)
+            }
+    }
+
+    fun updatePrivateReply(reply: CommentStructure, commentHashMap: HashMap<String, Any>,
+                           onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("UIDs")
+            .document(reply.writerOfTopCommentUID)
+            .collection("privateComments")
+            .document(reply.topCommentIDForReply)
+            .collection("privateReplies")
+            .document(reply.commentID)
+            .update(commentHashMap)
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+    fun deletePrivateReply(reply: CommentStructure, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("UIDs")
+            .document(reply.writerOfTopCommentUID)
+            .collection("privateComments")
+            .document(reply.topCommentIDForReply)
+            .collection("privateReplies")
+            .document(reply.commentID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deletePrivateReply", e.message.toString(), e)
+            }
+    }
+
+    fun getPrivateReplies(comment: CommentStructure, onComplete: (ArrayList<CommentStructure>?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(comment.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(comment.postID)
+            .collection("UIDs")
+            .document(comment.writerUID)
+            .collection("privateComments")
+            .document(comment.commentID)
+            .collection("privateReplies")
+            .get()
+            .addOnSuccessListener { docs ->
+                if (!docs.isEmpty){
+                    val replies = ArrayList<CommentStructure>()
+                    for (i in docs){
+                        replies.add(i.toObject(CommentStructure::class.java))
+                    }
+                    onComplete(replies)
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getPrivateReplies", e.message.toString(), e)
+            }
+    }
+
+    fun addPrivateReply(reply: CommentStructure, onComplete: (Boolean) -> Unit){
+        val privateRepliesCollection = mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("UIDs")
+            .document(reply.writerOfTopCommentUID)
+            .collection("privateComments")
+            .document(reply.topCommentIDForReply)
+            .collection("privateReplies")
+
+        privateRepliesCollection.add(reply)
+            .addOnSuccessListener { document ->
+                val replyID = document.id
+                privateRepliesCollection.document(replyID).update("commentID", replyID)
+                    .addOnSuccessListener {
+                        onComplete(true)
+                    }
+                    .addOnFailureListener { e ->
+                        onComplete(false)
+                        Log.e("error addPrivateReplyForPrivateComment", e.message.toString(), e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error addPrivateReplyForPrivateComment", e.message.toString(), e)
+            }
+    }
+
     fun getUIDsOfPrivateCommentsForPostOwner(postID: String, postOwnerUID: String,
                                              onComplete: (ArrayList<String>?) -> Unit){
         mFireStore.collection(Constants.USERS)
@@ -760,6 +1001,188 @@ class FireStoreClass {
             .addOnFailureListener { e ->
                 onComplete(false)
                 Log.e("error updating public comment", e.message.toString(), e)
+            }
+    }
+
+    fun likePublicReply(reply: CommentStructure, currentUserID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("publicComments")
+            .document(reply.topCommentIDForReply)
+            .collection("replies")
+            .document(reply.commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .set(mapOf("userID" to currentUserID))
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error likePublicReply", e.message.toString(), e)
+            }
+    }
+
+    fun unlikePublicReply(reply: CommentStructure, currentUserID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("publicComments")
+            .document(reply.topCommentIDForReply)
+            .collection("replies")
+            .document(reply.commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error unlikePublicReply", e.message.toString(), e)
+            }
+    }
+
+    fun getLikeSituationForPublicReply(reply: CommentStructure, currentUserID: String,
+                                       onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("publicComments")
+            .document(reply.topCommentIDForReply)
+            .collection("replies")
+            .document(reply.commentID)
+            .collection("likes")
+            .document(currentUserID)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()){
+                    onComplete(true)
+                }else{
+                    onComplete(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error getLikeSituationForPublicReply", e.message.toString(), e)
+            }
+    }
+
+    fun getNumberOfLikesForPublicReply(reply: CommentStructure, onComplete: (Int?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("publicComments")
+            .document(reply.topCommentIDForReply)
+            .collection("replies")
+            .document(reply.commentID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    onComplete(documents.size())
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getNumberOfLikesForPublicReply", e.message.toString(), e)
+            }
+    }
+
+    fun updatePublicReply(reply: CommentStructure, commentHashMap: HashMap<String, Any>,
+                          onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("publicComments")
+            .document(reply.topCommentIDForReply)
+            .collection("replies")
+            .document(reply.commentID)
+            .update(commentHashMap)
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+    fun deletePublicReply(reply: CommentStructure, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("publicComments")
+            .document(reply.topCommentIDForReply)
+            .collection("replies")
+            .document(reply.commentID)
+            .delete()
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener {
+                onComplete(false)
+            }
+    }
+
+    fun getPublicReplies(comment: CommentStructure, onComplete: (ArrayList<CommentStructure>?) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(comment.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(comment.postID)
+            .collection("publicComments")
+            .document(comment.commentID)
+            .collection("replies")
+            .get()
+            .addOnSuccessListener { documents ->
+                if (!documents.isEmpty){
+                    val replies = ArrayList<CommentStructure>()
+                    for (doc in documents){
+                        replies.add(doc.toObject(CommentStructure::class.java))
+                    }
+                    onComplete(replies)
+                }else{
+                    onComplete(null)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(null)
+                Log.e("error getPublicReplies", e.message.toString(), e)
+            }
+    }
+
+    fun addPublicReply(reply: CommentStructure, onComplete: (Boolean) -> Unit){
+        val repliesCollection = mFireStore.collection(Constants.USERS)
+            .document(reply.postOwnerUID)
+            .collection(Constants.Posts)
+            .document(reply.postID)
+            .collection("publicComments")
+            .document(reply.topCommentIDForReply)
+            .collection("replies")
+
+        repliesCollection.add(reply)
+            .addOnSuccessListener { document ->
+                val replyID = document.id
+                repliesCollection.document(replyID).update("commentID", replyID)
+                    .addOnSuccessListener {
+                        onComplete(true)
+                    }
+                    .addOnFailureListener { e ->
+                        onComplete(false)
+                        Log.e("error addReplyForPublicComment", e.message.toString(), e)
+                    }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error addReplyForPublicComment", e.message.toString(), e)
             }
     }
 
@@ -1408,6 +1831,9 @@ class FireStoreClass {
                     is EditCommentActivity -> {
                         activity.uploadImageOnCloudSuccess(Uri.toString())
                     }
+                    is ReplyCommentActivity -> {
+                        activity.uploadImageOnCloudSuccess(Uri.toString())
+                    }
                 }
             }
         }.addOnFailureListener { e ->
@@ -1426,6 +1852,9 @@ class FireStoreClass {
                     activity.hideProgressDialog()
                 }
                 is EditCommentActivity -> {
+                    activity.hideProgressDialog()
+                }
+                is ReplyCommentActivity -> {
                     activity.hideProgressDialog()
                 }
             }
