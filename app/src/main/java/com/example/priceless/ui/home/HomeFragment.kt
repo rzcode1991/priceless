@@ -68,6 +68,7 @@ class HomeFragment : Fragment() {
         binding.ibCreatePost.setOnClickListener {
             val intent = Intent(activity, CreatePostActivity::class.java)
             startActivity(intent)
+            //activity?.finish()
             // we could finish the activity and override onBackPressed, if too many request bothers
         }
 
@@ -110,6 +111,7 @@ class HomeFragment : Fragment() {
                 if (_binding != null){
                     Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
                     binding.pbFragmentHome.visibility = View.GONE
+                    binding.recyclerView.visibility = View.GONE
                 }
                 return@launch
             }
@@ -133,9 +135,11 @@ class HomeFragment : Fragment() {
                     }
                 }
             }else{
+                /*
                 if (_binding != null) {
                     Toast.makeText(activity, "Error Getting Time; Check Your Internet Connection", Toast.LENGTH_SHORT).show()
                 }
+                 */
             }
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
@@ -152,8 +156,8 @@ class HomeFragment : Fragment() {
                         }
                         deferredCompletable.await()
                     }
-
                     if (updatePostJob.await()) {
+                        postToBeUpdated.visibility = true
                         postToBeUpdated.timeCreatedMillis = secondsNow
                         visiblePosts.add(postToBeUpdated)
                         Log.d("--- visible posts after adding 1 post for update:", "${visiblePosts.size}")
@@ -171,6 +175,7 @@ class HomeFragment : Fragment() {
                         postHashMap["timeCreatedMillis"] = secondsNow
                         batchUpdates[eachPost.postID] = postHashMap
                         eachPost.timeCreatedMillis = secondsNow
+                        eachPost.visibility = true
                     }
                     val batchUpdateJob = async {
                         val deferredCompletable = CompletableDeferred<Boolean>()
@@ -197,28 +202,22 @@ class HomeFragment : Fragment() {
                 val userInfo = deferredUserInfo.await()
                 if (userInfo != null) {
                     Log.d("--- user info is:", "$userInfo")
-                    visiblePosts.forEach { postItem ->
+                    allPosts.forEach { postItem ->
                         postItem.profilePicture = userInfo.image
                         postItem.userName = userInfo.userName
                     }
                 }
             }
             userInfoJob.await()
-            Log.d("--- all final visible posts are:", "${visiblePosts.size}")
-            if (visiblePosts.isNotEmpty()){
-                visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-                homeViewModel.updatePosts(visiblePosts)
-                if (_binding != null){
-                    binding.ibRefresh.setImageResource(R.drawable.ic_baseline_refresh_24)
-                    binding.pbFragmentHome.visibility = View.GONE
-                }
-                //hideProgressDialog()
-            }else{
-                if (_binding != null){
-                    binding.pbFragmentHome.visibility = View.GONE
-                    Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
-                }
+            //Log.d("--- all final visible posts are:", "${visiblePosts.size}")
+            allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
+            if (_binding != null){
+                binding.recyclerView.visibility = View.VISIBLE
+                binding.ibRefresh.setImageResource(R.drawable.ic_baseline_refresh_24)
+                binding.pbFragmentHome.visibility = View.GONE
             }
+            homeViewModel.updatePosts(allPosts)
+            //hideProgressDialog()
         }
     }
 
@@ -267,7 +266,7 @@ class HomeFragment : Fragment() {
                 true
             }
             R.id.menu_empty -> {
-                Toast.makeText(activity, "Menu empty clicked", Toast.LENGTH_SHORT).show()
+                activity?.finishAffinity()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -305,7 +304,7 @@ class HomeFragment : Fragment() {
         super.onResume()
         Log.d("onResume called", "")
         coroutineScope = CoroutineScope(Dispatchers.Main)
-        //loadPosts()
+        loadPosts()
     }
 
 

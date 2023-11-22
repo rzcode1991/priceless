@@ -18,6 +18,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.*
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 class CommentsActivity : BaseActivity(), OnClickListener {
 
@@ -45,6 +48,13 @@ class CommentsActivity : BaseActivity(), OnClickListener {
     private var dateNow: String = ""
     private var secondsNow: String = ""
     private lateinit var progressBar: ProgressBar
+    private lateinit var layoutPostContent: LinearLayout
+    private lateinit var layoutBuyPost: LinearLayout
+    private lateinit var tvPriceToBuy: TextView
+    private lateinit var btnGoToBuy: Button
+    private lateinit var tvTimeToShare: TextView
+    private lateinit var tvPrice: TextView
+    private lateinit var tvPricelessPost: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -66,6 +76,13 @@ class CommentsActivity : BaseActivity(), OnClickListener {
         btnSendComment = findViewById(R.id.send_comment)
         rvComments = findViewById(R.id.recycler_view_comments)
         progressBar = findViewById(R.id.pb_comments)
+        layoutPostContent = findViewById(R.id.layout_post_content_comments)
+        layoutBuyPost = findViewById(R.id.layout_buy_post_comments)
+        tvPriceToBuy = findViewById(R.id.tv_price_to_buy_comments)
+        btnGoToBuy = findViewById(R.id.btn_go_to_buy_comments)
+        tvTimeToShare = findViewById(R.id.tv_time_to_share_comments)
+        tvPrice = findViewById(R.id.tv_price_comments)
+        tvPricelessPost = findViewById(R.id.tv_priceless_post_comments)
 
         if (intent.hasExtra("post")){
             post = intent.getParcelableExtra("post")!!
@@ -96,20 +113,46 @@ class CommentsActivity : BaseActivity(), OnClickListener {
             ivProfilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
         }
         tvUserName.text = post.userName
-        tvPostText.text = post.postText
-        if (post.postImage.isNotEmpty()){
-            ivPostImage.visibility = VISIBLE
-            GlideLoader(this).loadImageUri(post.postImage, ivPostImage)
-            ivPostImage.setOnClickListener(this@CommentsActivity)
-        }else{
-            ivPostImage.visibility = View.GONE
+        if (!post.visibility && post.price.isNotEmpty()){
+            layoutPostContent.visibility = View.GONE
+            layoutBuyPost.visibility = VISIBLE
+            tvPricelessPost.visibility = View.GONE
+            tvPriceToBuy.text = "${post.price} $"
+            btnGoToBuy.setOnClickListener(this)
+            val millis = post.timeToShare.toLong()*1000
+            val timeToShareToShow = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                .format(Date(millis))
+            tvTimeToShare.text = "Or It Will Be Visible At: $timeToShareToShow"
+        }else if (!post.visibility && post.price.isEmpty()){
+            tvPricelessPost.visibility = VISIBLE
+            layoutPostContent.visibility = View.GONE
+            layoutBuyPost.visibility = View.GONE
+        }else if (post.visibility){
+            layoutBuyPost.visibility = View.GONE
+            tvPricelessPost.visibility = View.GONE
+            layoutPostContent.visibility = VISIBLE
+            tvPostText.text = post.postText
+            if (post.postImage.isNotEmpty()){
+                ivPostImage.visibility = VISIBLE
+                GlideLoader(this).loadImageUri(post.postImage, ivPostImage)
+                ivPostImage.setOnClickListener(this@CommentsActivity)
+            }else{
+                ivPostImage.visibility = View.GONE
+            }
+            if (post.timeTraveler && post.price.isNotEmpty() &&
+                post.buyerID.isEmpty()){
+                tvPrice.visibility = VISIBLE
+                tvPrice.text = "${post.price} $ Not Sold"
+            }else{
+                tvPrice.visibility = View.GONE
+            }
+            if (post.timeTraveler && post.price.isEmpty()){
+                tvPriceLess.visibility = VISIBLE
+            }else{
+                tvPriceLess.visibility = View.GONE
+            }
         }
         tvTimeCreatedPost.text = post.timeCreatedToShow
-        if (post.timeTraveler){
-            tvPriceLess.visibility = VISIBLE
-        }else{
-            tvPriceLess.visibility = View.GONE
-        }
         getNumberOfLikes()
         checkLikeSituation()
 
@@ -201,6 +244,9 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                             addNewComment()
                         }
                     }
+                }
+                R.id.btn_go_to_buy_comments -> {
+                    //TODO:
                 }
             }
         }

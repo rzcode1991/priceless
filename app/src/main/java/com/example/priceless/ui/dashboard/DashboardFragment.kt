@@ -113,15 +113,18 @@ class DashboardFragment : Fragment() {
                 async { FireStoreClass().getPostsFromFireStore(user) }
             }
 
-            val allPosts = userPostsDeferred?.awaitAll()?.filterNotNull()?.flatten()
-            if (allPosts.isNullOrEmpty()) {
+            val allPostsList = userPostsDeferred?.awaitAll()?.filterNotNull()?.flatten()
+            if (allPostsList.isNullOrEmpty()) {
                 //hideProgressDialog()
                 if (_binding != null) {
                     Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
                     binding.pbFragmentDashboard.visibility = View.GONE
+                    binding.recyclerViewTimeline.visibility = View.GONE
                 }
                 return@launch
             }
+
+            val allPosts = ArrayList(allPostsList)
 
             Log.d("---all posts are:", "${allPosts.size}")
 
@@ -147,10 +150,12 @@ class DashboardFragment : Fragment() {
                     }
                 }
             }else{
+                /*
                 //hideProgressDialog()
                 if (_binding != null) {
                     Toast.makeText(activity, "Error Getting Time; Check Your Internet Connection", Toast.LENGTH_SHORT).show()
                 }
+                 */
             }
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
@@ -170,6 +175,7 @@ class DashboardFragment : Fragment() {
                     }
 
                     if (updatePostJob.await()) {
+                        postToBeUpdated.visibility = true
                         postToBeUpdated.timeCreatedMillis = secondsNow
                         visiblePosts.add(postToBeUpdated)
                         Log.d("---timeline visible posts after adding 1 post for update:", "${visiblePosts.size}")
@@ -200,6 +206,7 @@ class DashboardFragment : Fragment() {
                     if (batchUpdateJob.await()) {
                         for (i in postsToUpdate){
                             i.timeCreatedMillis = secondsNow
+                            i.visibility = true
                         }
                         visiblePosts.addAll(postsToUpdate)
                         Log.d("---timeline visible posts after adding multiple posts for update:", "${visiblePosts.size}")
@@ -210,7 +217,7 @@ class DashboardFragment : Fragment() {
                     }
                 }
             }
-            val userGroupedPosts = visiblePosts.groupBy { it.userId }
+            val userGroupedPosts = allPosts.groupBy { it.userId }
             val userInfoJobs = userGroupedPosts.map { (userId, groupPosts) ->
                 async {
                     val deferredUserInfo = CompletableDeferred<User?>()
@@ -228,18 +235,20 @@ class DashboardFragment : Fragment() {
                 }
             }
             userInfoJobs.awaitAll()
-            Log.d("---all final visible posts are:", "${visiblePosts.size}")
-            if (visiblePosts.isNotEmpty()){
-                visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-                dashViewModel.updatePosts(visiblePosts)
-                //hideProgressDialog()
+            //Log.d("---all final visible posts are:", "${visiblePosts.size}")
+            if (allPosts.isNotEmpty()){
+                allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
                 if (_binding != null){
+                    binding.recyclerViewTimeline.visibility = View.VISIBLE
                     binding.ibRefreshTimeline.setImageResource(R.drawable.ic_baseline_refresh_24)
                     binding.pbFragmentDashboard.visibility = View.GONE
                 }
+                dashViewModel.updatePosts(allPosts)
+                //hideProgressDialog()
             }else{
                 if (_binding != null){
                     binding.pbFragmentDashboard.visibility = View.GONE
+                    binding.recyclerViewTimeline.visibility = View.GONE
                     Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -298,7 +307,7 @@ class DashboardFragment : Fragment() {
         super.onResume()
         Log.d("---onResume timeline called", "")
         coroutineScope = CoroutineScope(Dispatchers.Main)
-        //loadPosts()
+        loadPosts()
     }
 
 

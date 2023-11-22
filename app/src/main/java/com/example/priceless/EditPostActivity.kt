@@ -157,7 +157,14 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                         builder.setIcon(R.drawable.ic_round_warning_24)
                         builder.setPositiveButton("Yes") { dialog, _ ->
                             showProgressDialog()
-                            FireStoreClass().deletePostOnFireStore(this@EditPostActivity, post.postID)
+                            FireStoreClass().deletePostOnFireStoreWithCallback(post.postID) { yep ->
+                                if (yep){
+                                    deletePostOnFireStoreSuccess()
+                                }else{
+                                    hideProgressDialog()
+                                    Toast.makeText(this, "Error While Deleting Post", Toast.LENGTH_LONG).show()
+                                }
+                            }
                             dialog.dismiss()
                         }
                         builder.setNeutralButton("Cancel") {dialog, _ ->
@@ -229,14 +236,29 @@ class EditPostActivity : BaseActivity(), OnClickListener {
 
     fun uploadImageOnCloudSuccess(newImageUrl: String){
         if (post.postImage.isNotEmpty()){
-            FireStoreClass().deleteImageFromCloudStorage(post.postImage)
-        }
-        newImageNameUrl = newImageUrl
-        coroutineScope.launch {
-            try {
-                updatePost()
-            } catch (e: Exception) {
-                Log.d("err calling updatePost", e.message.toString())
+            FireStoreClass().deleteImageFromCloudStorage(post.postImage) { ok ->
+                if (ok){
+                    newImageNameUrl = newImageUrl
+                    coroutineScope.launch {
+                        try {
+                            updatePost()
+                        } catch (e: Exception) {
+                            Log.d("err calling updatePost", e.message.toString())
+                        }
+                    }
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Error Adding New Image On Cloud.", Toast.LENGTH_LONG).show()
+                }
+            }
+        }else{
+            newImageNameUrl = newImageUrl
+            coroutineScope.launch {
+                try {
+                    updatePost()
+                } catch (e: Exception) {
+                    Log.d("err calling updatePost", e.message.toString())
+                }
             }
         }
     }
@@ -304,7 +326,8 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         sortedPosts.remove(post.timeCreatedMillis)
         // assuming that only visible posts are editable
         newPost = PostStructure(post.profilePicture, post.userId, post.userName, newPostText,
-            newPostImage, newTimeCreatedMillis, newTimeCreatedToShow, "now", true, false, post.postID, true)
+            newPostImage, newTimeCreatedMillis, newTimeCreatedToShow, "now",
+            true, false, "", "", post.postID, true)
         sortedPosts[newTimeCreatedMillis] = newPost
         hideProgressDialog()
         Toast.makeText(this, "Post Updated Successfully", Toast.LENGTH_LONG).show()
@@ -314,17 +337,31 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     }
 
 
-    fun deletePostOnFireStoreSuccess(){
+    private fun deletePostOnFireStoreSuccess(){
         if (post.postImage.isNotEmpty()){
-            FireStoreClass().deleteImageFromCloudStorage(post.postImage)
+            FireStoreClass().deleteImageFromCloudStorage(post.postImage) { ok ->
+                if (ok){
+                    val sortedPosts = Constants.sortedPosts
+                    sortedPosts.remove(post.timeCreatedMillis)
+                    hideProgressDialog()
+                    Toast.makeText(this, "Post Deleted", Toast.LENGTH_LONG).show()
+                    val intent = Intent(this@EditPostActivity, FragmentActivity::class.java)
+                    startActivity(intent)
+                    finish()
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Error While Deleting Post", Toast.LENGTH_LONG).show()
+                }
+            }
+        }else{
+            val sortedPosts = Constants.sortedPosts
+            sortedPosts.remove(post.timeCreatedMillis)
+            hideProgressDialog()
+            Toast.makeText(this, "Post Deleted", Toast.LENGTH_LONG).show()
+            val intent = Intent(this@EditPostActivity, FragmentActivity::class.java)
+            startActivity(intent)
+            finish()
         }
-        val sortedPosts = Constants.sortedPosts
-        sortedPosts.remove(post.timeCreatedMillis)
-        hideProgressDialog()
-        Toast.makeText(this, "Post Deleted", Toast.LENGTH_LONG).show()
-        val intent = Intent(this@EditPostActivity, FragmentActivity::class.java)
-        startActivity(intent)
-        finish()
     }
 
 }

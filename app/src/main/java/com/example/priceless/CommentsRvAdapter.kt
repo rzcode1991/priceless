@@ -45,6 +45,14 @@ class CommentsRvAdapter(val context: Context,
 
     override fun onBindViewHolder(holder: CommentViewHolder, position: Int) {
         val comment = commentsList[position]
+
+        holder.ivCommentPhoto.visibility = View.GONE
+        holder.tvPrivateComment.visibility = View.GONE
+        holder.tvDeleteComment.visibility = View.GONE
+        holder.tvEditComment.visibility = View.GONE
+        holder.tvReply.visibility = View.GONE
+        holder.tvNumberOfLikes.visibility = View.GONE
+
         if (comment.writerProfilePic.isNotEmpty()){
             GlideLoader(context).loadImageUri(comment.writerProfilePic, holder.ivProfilePic)
         }else{
@@ -329,14 +337,26 @@ class CommentsRvAdapter(val context: Context,
                                 hideProgressDialog()
                                 if (success){
                                     if (comment.commentPhoto.isNotEmpty()){
-                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { ok ->
+                                            if (ok){
+                                                val itemPosition = commentsList.indexOf(comment)
+                                                if (itemPosition != -1) {
+                                                    commentsList.removeAt(itemPosition)
+                                                    notifyItemRemoved(itemPosition)
+                                                }
+                                                Toast.makeText(context, "Reply Deleted.", Toast.LENGTH_SHORT).show()
+                                            }else{
+                                                Toast.makeText(context, "Error While Deleting Reply.", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }else{
+                                        val itemPosition = commentsList.indexOf(comment)
+                                        if (itemPosition != -1) {
+                                            commentsList.removeAt(itemPosition)
+                                            notifyItemRemoved(itemPosition)
+                                        }
+                                        Toast.makeText(context, "Reply Deleted.", Toast.LENGTH_SHORT).show()
                                     }
-                                    val itemPosition = commentsList.indexOf(comment)
-                                    if (itemPosition != -1) {
-                                        commentsList.removeAt(itemPosition)
-                                        notifyItemRemoved(itemPosition)
-                                    }
-                                    Toast.makeText(context, "Reply Deleted.", Toast.LENGTH_SHORT).show()
                                 }else{
                                     Toast.makeText(context, "Error While Deleting Reply.", Toast.LENGTH_SHORT).show()
                                 }
@@ -349,14 +369,26 @@ class CommentsRvAdapter(val context: Context,
                                 hideProgressDialog()
                                 if (success){
                                     if (comment.commentPhoto.isNotEmpty()){
-                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yep ->
+                                            if (yep){
+                                                val itemPosition = commentsList.indexOf(comment)
+                                                if (itemPosition != -1) {
+                                                    commentsList.removeAt(itemPosition)
+                                                    notifyItemRemoved(itemPosition)
+                                                }
+                                                Toast.makeText(context, "Comment Deleted.", Toast.LENGTH_SHORT).show()
+                                            }else{
+                                                Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }else{
+                                        val itemPosition = commentsList.indexOf(comment)
+                                        if (itemPosition != -1) {
+                                            commentsList.removeAt(itemPosition)
+                                            notifyItemRemoved(itemPosition)
+                                        }
+                                        Toast.makeText(context, "Comment Deleted.", Toast.LENGTH_SHORT).show()
                                     }
-                                    val itemPosition = commentsList.indexOf(comment)
-                                    if (itemPosition != -1) {
-                                        commentsList.removeAt(itemPosition)
-                                        notifyItemRemoved(itemPosition)
-                                    }
-                                    Toast.makeText(context, "Comment Deleted.", Toast.LENGTH_SHORT).show()
                                 }else{
                                     Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                                 }
@@ -369,14 +401,26 @@ class CommentsRvAdapter(val context: Context,
                                 hideProgressDialog()
                                 if (onSuccess){
                                     if (comment.commentPhoto.isNotEmpty()){
-                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yep ->
+                                            if (yep){
+                                                val commentPosition = commentsList.indexOf(comment)
+                                                if (commentPosition != -1) {
+                                                    commentsList.removeAt(commentPosition)
+                                                    notifyItemRemoved(commentPosition)
+                                                }
+                                                Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
+                                            }else{
+                                                Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }else{
+                                        val commentPosition = commentsList.indexOf(comment)
+                                        if (commentPosition != -1) {
+                                            commentsList.removeAt(commentPosition)
+                                            notifyItemRemoved(commentPosition)
+                                        }
+                                        Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
                                     }
-                                    val commentPosition = commentsList.indexOf(comment)
-                                    if (commentPosition != -1) {
-                                        commentsList.removeAt(commentPosition)
-                                        notifyItemRemoved(commentPosition)
-                                    }
-                                    Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
                                 }else{
                                     Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                                 }
@@ -389,17 +433,29 @@ class CommentsRvAdapter(val context: Context,
                                 hideProgressDialog()
                                 if (onSuccess){
                                     if (comment.commentPhoto.isNotEmpty()){
-                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                                        FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yes ->
+                                            if (yes){
+                                                val commentPosition = commentsList.indexOf(comment)
+                                                if (commentPosition != -1) {
+                                                    commentsList.removeAt(commentPosition)
+                                                    notifyItemRemoved(commentPosition)
+                                                }
+                                                Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
+                                            }else{
+                                                Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
+                                            }
+                                        }
+                                    }else{
+                                        val commentPosition = commentsList.indexOf(comment)
+                                        if (commentPosition != -1) {
+                                            commentsList.removeAt(commentPosition)
+                                            notifyItemRemoved(commentPosition)
+                                        }
+                                        //commentsList.removeAt(position)
+                                        //notifyDataSetChanged()
+                                        //holder.cardViewCommentItem.visibility = View.GONE
+                                        Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
                                     }
-                                    val commentPosition = commentsList.indexOf(comment)
-                                    if (commentPosition != -1) {
-                                        commentsList.removeAt(commentPosition)
-                                        notifyItemRemoved(commentPosition)
-                                    }
-                                    //commentsList.removeAt(position)
-                                    //notifyDataSetChanged()
-                                    //holder.cardViewCommentItem.visibility = View.GONE
-                                    Toast.makeText(context, "Comment Was Deleted.", Toast.LENGTH_SHORT).show()
                                 }else{
                                     Toast.makeText(context, "Error While Deleting Comment.", Toast.LENGTH_SHORT).show()
                                 }

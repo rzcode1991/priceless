@@ -33,6 +33,10 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
     override fun onBindViewHolder(holder: RequestViewHolder, position: Int) {
         // we are talking about received Requests for now
         val currentRequest = requestList[position]
+
+        holder.layoutUserInfo.visibility = View.GONE
+        holder.layOutActionRequest.visibility = View.GONE
+
         FireStoreClass().getUserInfoWithCallback(currentRequest.senderUserID) { userInfo ->
             if (userInfo != null){
                 val senderProfilePic = userInfo.image

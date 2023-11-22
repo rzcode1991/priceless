@@ -2,6 +2,7 @@ package com.example.priceless
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
 
 class FullScreenPostImageActivity : AppCompatActivity() {
@@ -9,6 +10,7 @@ class FullScreenPostImageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_full_screen_post_image)
 
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN
         supportActionBar?.hide()
 
         if (intent.hasExtra("post_image")){

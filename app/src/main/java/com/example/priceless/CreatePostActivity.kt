@@ -16,6 +16,8 @@ import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.*
 import java.io.IOException
 import java.text.ParseException
@@ -29,7 +31,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private lateinit var tvSelectedDate: TextView
     private lateinit var ivProfilePic: ImageView
     private lateinit var tvUserName: TextView
-    private lateinit var etPostText: EditText
+    private lateinit var etPostText: TextInputEditText
     private lateinit var ivPostImage: ImageView
     private lateinit var tvSendPost: TextView
     private lateinit var userInfo: User
@@ -43,6 +45,11 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private var getTime: GetTime? = null
     private lateinit var dateAndTimePair: Pair<String, String>
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
+    private lateinit var layoutPrice: LinearLayout
+    private lateinit var cbPrice: CheckBox
+    private lateinit var tilPrice: TextInputLayout
+    private lateinit var etPrice: TextInputEditText
+    //private var selectedPrice: Float = 0F
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,6 +64,10 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         etPostText = findViewById(R.id.et_main_post_text_create_post)
         ivPostImage = findViewById(R.id.iv_post_image_create_post)
         tvSendPost = findViewById(R.id.tv_send_post_create_post)
+        layoutPrice = findViewById(R.id.layout_price)
+        cbPrice = findViewById(R.id.cb_price)
+        tilPrice = findViewById(R.id.text_input_Layout_price)
+        etPrice = findViewById(R.id.et_price)
 
         //getTime = GetTime()
 
@@ -71,10 +82,29 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             if (isChecked) {
                 btnSelectDate.visibility = VISIBLE
                 btnSelectDate.setOnClickListener(this@CreatePostActivity)
+                layoutPrice.visibility = VISIBLE
             } else {
                 btnSelectDate.visibility = View.GONE
                 tvSelectedDate.visibility = View.GONE
                 finalTimeInMillis = ""
+                layoutPrice.visibility = View.GONE
+                cbPrice.isChecked = false
+                tilPrice.visibility = View.GONE
+                etPrice.visibility = View.GONE
+                etPrice.setText("")
+                //selectedPrice = 0F
+            }
+        }
+
+        cbPrice.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                tilPrice.visibility = VISIBLE
+                etPrice.visibility = VISIBLE
+            } else {
+                tilPrice.visibility = View.GONE
+                etPrice.visibility = View.GONE
+                etPrice.setText("")
+                //selectedPrice = 0F
             }
         }
 
@@ -98,6 +128,8 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             val timeToShare = finalTimeInMillis.ifEmpty { "now" }
             val visibility = timeToShare == "now"
             val timeTraveler = !visibility
+            val price = etPrice.text.toString()
+            val buyerID = ""
             if (timeTraveler){
                 if (timeToShare.toLong() <= secondsNow.toLong()){
                     showErrorSnackBar("Please select a future date", true)
@@ -106,14 +138,16 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                     val postID = ""
                     val edited = false
                     newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
-                        timeCreatedMillis, timeCreatedToShow, timeToShare, visibility, timeTraveler, postID, edited)
+                        timeCreatedMillis, timeCreatedToShow, timeToShare, visibility,
+                        timeTraveler, price, buyerID, postID, edited)
                     FireStoreClass().createPostOnFireStore(this, newPost)
                 }
             }else{
                 val postID = ""
                 val edited = false
                 newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
-                    timeCreatedMillis, timeCreatedToShow, timeToShare, visibility, timeTraveler, postID, edited)
+                    timeCreatedMillis, timeCreatedToShow, timeToShare, visibility,
+                    timeTraveler, price, buyerID, postID, edited)
                 FireStoreClass().createPostOnFireStore(this, newPost)
             }
         }
@@ -234,6 +268,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
 
 
     private fun validateUserInput(): Boolean {
+
         val postText = etPostText.text.toString()
 
         if (TextUtils.isEmpty(postText)) {
@@ -250,6 +285,18 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
 
         if (disallowedPattern.containsMatchIn(postText)) {
             showErrorSnackBar("You Cant Use These Characters: \\[]<>#/ In Post Text.", true)
+            return false
+        }
+
+        if (cbPrice.isChecked && etPrice.text.toString().isEmpty()){
+            showErrorSnackBar("Please Set a Price or Uncheck The Box.", true)
+            return false
+        }
+
+        // TODO: etPrice validation
+        val amountOfPrice = etPrice.text.toString()
+        if (amountOfPrice.isNotEmpty() && amountOfPrice.toFloat() <= 0F){
+            showErrorSnackBar("Price Must Be More Than 0", true)
             return false
         }
 

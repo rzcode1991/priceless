@@ -11,6 +11,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.ktx.storage
 import com.google.firebase.firestore.WriteBatch
+import com.google.firebase.firestore.ktx.toObject
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
@@ -867,6 +868,63 @@ class FireStoreClass {
 
     fun deletePrivateComment(postOwnerUID: String, postID: String, writerOfCommentUID: String,
                              commentID: String, onComplete: (Boolean) -> Unit){
+
+        val privateCommentsCollection = mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+
+        deleteSubCollectionLikesOfPrivateComment(postOwnerUID, postID, writerOfCommentUID,
+            commentID) { successful ->
+            if (successful){
+                deleteSubCollectionRepliesOfPrivateComment(postOwnerUID, postID, writerOfCommentUID,
+                    commentID) { successfully ->
+                    if (successfully){
+                        privateCommentsCollection.document(commentID)
+                            .delete()
+                            .addOnSuccessListener {
+                                privateCommentsCollection.get()
+                                    .addOnSuccessListener { privateComments ->
+                                        if (privateComments.isEmpty){
+                                            mFireStore.collection(Constants.USERS)
+                                                .document(postOwnerUID)
+                                                .collection(Constants.Posts)
+                                                .document(postID)
+                                                .collection("UIDs")
+                                                .document(writerOfCommentUID)
+                                                .delete()
+                                                .addOnSuccessListener {
+                                                    onComplete(true)
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    onComplete(false)
+                                                    Log.e("error deleting private comment", e.message.toString(), e)
+                                                }
+                                        }else{
+                                            onComplete(true)
+                                        }
+                                    }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleting private comment", e.message.toString(), e)
+                            }
+                    }else{
+                        onComplete(false)
+                    }
+                }
+            }else{
+                onComplete(false)
+            }
+        }
+    }
+
+    private fun deleteSubCollectionLikesOfPrivateComment(postOwnerUID: String, postID: String,
+                                                         writerOfCommentUID: String, commentID: String,
+                                                         onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
             .document(postOwnerUID)
             .collection(Constants.Posts)
@@ -875,13 +933,133 @@ class FireStoreClass {
             .document(writerOfCommentUID)
             .collection("privateComments")
             .document(commentID)
-            .delete()
-            .addOnSuccessListener {
-                onComplete(true)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likes ->
+                if (!likes.isEmpty){
+                    var likesToDelete = likes.size()
+                    for (like in likes){
+                        like.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDelete --
+                                if (likesToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteSubCollectionLikesOfPrivateComment", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
             }
             .addOnFailureListener { e ->
                 onComplete(false)
-                Log.e("error deleting private comment", e.message.toString(), e)
+                Log.e("error deleteSubCollectionLikesOfPrivateComment", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteSubCollectionRepliesOfPrivateComment(postOwnerUID: String, postID: String,
+                                                         writerOfCommentUID: String, commentID: String,
+                                                           onComplete: (Boolean) -> Unit){
+        val privateRepliesCollection = mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("privateReplies")
+
+            privateRepliesCollection.get()
+            .addOnSuccessListener { replies ->
+                if (!replies.isEmpty){
+                    var repliesToDelete = replies.size()
+                    for (reply in replies){
+                        val replyItem = reply.toObject(CommentStructure::class.java)
+                        deleteLikesOfSubCollectionRepliesOfPrivateComment(postOwnerUID, postID,
+                            writerOfCommentUID, commentID, reply.id) { yep ->
+                            if (yep){
+                                reply.reference.delete()
+                                    .addOnSuccessListener {
+                                        if (replyItem.commentPhoto.isNotEmpty()){
+                                            deleteImageFromCloudStorage(replyItem.commentPhoto) { onSuccess ->
+                                                if (onSuccess){
+                                                    repliesToDelete --
+                                                    if (repliesToDelete == 0){
+                                                        onComplete(true)
+                                                    }
+                                                }else{
+                                                    onComplete(false)
+                                                }
+                                            }
+                                        }else{
+                                            repliesToDelete --
+                                            if (repliesToDelete == 0){
+                                                onComplete(true)
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        onComplete(false)
+                                        Log.e("error deleteSubCollectionRepliesOfPrivateComment", e.message.toString(), e)
+                                    }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteSubCollectionRepliesOfPrivateComment", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteLikesOfSubCollectionRepliesOfPrivateComment(postOwnerUID: String, postID: String,
+                                                                  writerOfCommentUID: String, commentID: String,
+                                                                  replyID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(writerOfCommentUID)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("privateReplies")
+            .document(replyID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likes ->
+                if (!likes.isEmpty){
+                    var likesToDelete = likes.size()
+                    for (like in likes){
+                        like.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDelete --
+                                if (likesToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteLikesOfSubCollectionRepliesOfPrivateComment", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteLikesOfSubCollectionRepliesOfPrivateComment", e.message.toString(), e)
             }
     }
 
@@ -969,19 +1147,165 @@ class FireStoreClass {
 
     fun deletePublicComment(postOwnerUID: String, postID: String, commentID: String,
                             onComplete: (Boolean) -> Unit){
+
+        deleteSubCollectionLikesForPublicComments(postOwnerUID, postID, commentID) { ok ->
+            if (ok){
+                deleteSubCollectionRepliesForPublicComments(postOwnerUID, postID, commentID) { yes ->
+                    if (yes){
+                        mFireStore.collection(Constants.USERS)
+                            .document(postOwnerUID)
+                            .collection(Constants.Posts)
+                            .document(postID)
+                            .collection("publicComments")
+                            .document(commentID)
+                            .delete()
+                            .addOnSuccessListener {
+                                onComplete(true)
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleting public comment", e.message.toString(), e)
+                            }
+                    }else{
+                        onComplete(false)
+                    }
+                }
+            }else{
+                onComplete(false)
+            }
+        }
+    }
+
+    private fun deleteSubCollectionLikesForPublicComments(postOwnerUID: String, postID: String,
+                                                          commentID: String, onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
             .document(postOwnerUID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("publicComments")
             .document(commentID)
-            .delete()
-            .addOnSuccessListener {
-                onComplete(true)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likes ->
+                if (!likes.isEmpty){
+                    var likesToDelete = likes.size()
+                    for (like in likes){
+                        like.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDelete --
+                                if (likesToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteSubCollectionLikesForPublicComments", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
             }
             .addOnFailureListener { e ->
                 onComplete(false)
-                Log.e("error deleting public comment", e.message.toString(), e)
+                Log.e("error deleteSubCollectionLikesForPublicComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteSubCollectionRepliesForPublicComments(postOwnerUID: String, postID: String,
+                                                          commentID: String, onComplete: (Boolean) -> Unit){
+        val repliesCollection = mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("replies")
+
+            repliesCollection.get()
+            .addOnSuccessListener { replies ->
+                if (!replies.isEmpty){
+                    var repliesToDelete = replies.size()
+                    for (reply in replies){
+                        val replyItem = reply.toObject(CommentStructure::class.java)
+                        deleteLikesOfSubCollectionRepliesForPublicComments(postOwnerUID, postID,
+                            commentID, reply.id) { yep ->
+                            if (yep){
+                                reply.reference.delete()
+                                    .addOnSuccessListener {
+                                        if (replyItem.commentPhoto.isNotEmpty()){
+                                            deleteImageFromCloudStorage(replyItem.commentPhoto) { onSuccess ->
+                                                if (onSuccess){
+                                                    repliesToDelete --
+                                                    if (repliesToDelete == 0){
+                                                        onComplete(true)
+                                                    }
+                                                }else{
+                                                    onComplete(false)
+                                                }
+                                            }
+                                        }else{
+                                            repliesToDelete --
+                                            if (repliesToDelete == 0){
+                                                onComplete(true)
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        onComplete(false)
+                                        Log.e("error deleteSubCollectionRepliesForPublicComments", e.message.toString(), e)
+                                    }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteSubCollectionRepliesForPublicComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteLikesOfSubCollectionRepliesForPublicComments(postOwnerUID: String, postID: String,
+                                                                   commentID: String, replyID: String,
+                                                                   onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(postOwnerUID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("replies")
+            .document(replyID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likes ->
+                if (!likes.isEmpty){
+                    var likesToDelete = likes.size()
+                    for (like in likes){
+                        like.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDelete --
+                                if (likesToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteLikesOfSubCollectionRepliesForPublicComments", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteLikesOfSubCollectionRepliesForPublicComments", e.message.toString(), e)
             }
     }
 
@@ -1454,8 +1778,47 @@ class FireStoreClass {
             }
     }
 
+    fun deletePostOnFireStoreWithCallback(postID: String, onComplete: (Boolean) -> Unit){
 
+        deleteSubCollectionPublicComments(postID) { yep ->
+            if (yep){
+                deleteSubCollectionPrivateComments(postID) { ok ->
+                    if (ok){
+                        deleteSubCollectionLikesOfPost(postID) { success ->
+                            if (success){
+                                mFireStore.collection(Constants.USERS)
+                                    .document(getUserID())
+                                    .collection(Constants.Posts)
+                                    .document(postID)
+                                    .delete()
+                                    .addOnSuccessListener {
+                                        onComplete(true)
+                                    }
+                                    .addOnFailureListener { e ->
+                                        onComplete(false)
+                                        Log.e("error delete post with callback", e.message.toString(), e)
+                                    }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }else{
+                        onComplete(false)
+                    }
+                }
+            }else{
+                onComplete(false)
+            }
+        }
+    }
+
+    /*
     fun deletePostOnFireStore(activity: Activity, postID: String){
+
+        deleteSubCollectionPublicComments(postID)
+        deleteSubCollectionPrivateComments(postID)
+        deleteSubCollectionLikesOfPost(postID)
+
         mFireStore.collection(Constants.USERS)
             .document(getUserID())
             .collection(Constants.Posts)
@@ -1477,7 +1840,470 @@ class FireStoreClass {
                 Log.e(activity.javaClass.simpleName, "delete post on fireStore failed", e)
             }
     }
+     */
 
+    private fun deleteSubCollectionPublicComments(postID: String, onComplete: (Boolean) -> Unit) {
+        val publicCommentsCollection = mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+
+            publicCommentsCollection.get()
+            .addOnSuccessListener { publicComments ->
+                if (!publicComments.isEmpty){
+                    var commentsToDelete = publicComments.size()
+                    for (comment in publicComments) {
+                        val publicCommentItem = comment.toObject(CommentStructure::class.java)
+                        deleteLikesOfSubPublicComments(comment.id, postID) { onSuccess ->
+                            if (onSuccess){
+                                deleteRepliesOfSubPublicComments(postID, comment.id) { succeed ->
+                                    if (succeed){
+                                        comment.reference.delete()
+                                            .addOnSuccessListener {
+                                                if (publicCommentItem.commentPhoto.isNotEmpty()){
+                                                    deleteImageFromCloudStorage(publicCommentItem.commentPhoto) { yep ->
+                                                        if (yep){
+                                                            commentsToDelete --
+                                                            if (commentsToDelete == 0){
+                                                                onComplete(true)
+                                                            }
+                                                        }else{
+                                                            onComplete(false)
+                                                        }
+                                                    }
+                                                }else{
+                                                    commentsToDelete --
+                                                    if (commentsToDelete == 0){
+                                                        onComplete(true)
+                                                    }
+                                                }
+                                            }
+                                            .addOnFailureListener { e ->
+                                                onComplete(false)
+                                                Log.e("error deleteSubCollectionPublicComments", e.message.toString(), e)
+                                            }
+                                    }else{
+                                        onComplete(false)
+                                    }
+                                }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteSubCollectionPublicComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteRepliesOfSubPublicComments(postID: String, commentID: String,
+                                                 onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("replies")
+            .get()
+            .addOnSuccessListener { replies ->
+                if (!replies.isEmpty){
+                    var repliesToDelete = replies.size()
+                    for (reply in replies){
+                        val replyItem = reply.toObject(CommentStructure::class.java)
+                        deleteLikesOfRepliesOfSubPublicComments(postID, commentID, reply.id) { onSuccess ->
+                            if (onSuccess){
+                                reply.reference.delete()
+                                    .addOnSuccessListener {
+                                        if (replyItem.commentPhoto.isNotEmpty()){
+                                            deleteImageFromCloudStorage(replyItem.commentPhoto) { yep ->
+                                                if (yep){
+                                                    repliesToDelete --
+                                                    if (repliesToDelete == 0){
+                                                        onComplete(true)
+                                                    }
+                                                }else{
+                                                    onComplete(false)
+                                                }
+                                            }
+                                        }else{
+                                            repliesToDelete --
+                                            if (repliesToDelete == 0){
+                                                onComplete(true)
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener{ e ->
+                                        onComplete(false)
+                                        Log.e("error deleteRepliesOfSubPublicComments", e.message.toString(), e)
+                                    }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteRepliesOfSubPublicComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteLikesOfRepliesOfSubPublicComments(postID: String, commentID: String,
+                                                        replyID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("replies")
+            .document(replyID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likesForReplies ->
+                if (!likesForReplies.isEmpty){
+                    var likesToDelete = likesForReplies.size()
+                    for (likeForReply in likesForReplies){
+                        likeForReply.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDelete --
+                                if (likesToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteLikesOfRepliesOfSubPublicComments", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteLikesOfRepliesOfSubPublicComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteLikesOfSubPublicComments(commentID: String, postID: String,
+                                               onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("publicComments")
+            .document(commentID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likes ->
+                if (!likes.isEmpty){
+                    var likesToDeleteCount = likes.size()
+                    for (like in likes){
+                        like.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDeleteCount--
+                                if (likesToDeleteCount == 0) {
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteLikesOfSubPublicComments", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteLikesOfSubPublicComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteSubCollectionLikesOfPost(postID: String, onComplete: (Boolean) -> Unit) {
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likes ->
+                if (!likes.isEmpty){
+                    var likesToDelete = likes.size()
+                    for (like in likes) {
+                        like.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDelete --
+                                if (likesToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteSubCollectionLikesOfPost", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteSubCollectionLikesOfPost", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteSubCollectionPrivateComments(postID: String, onComplete: (Boolean) -> Unit) {
+        val uIDsCollection = mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+
+            uIDsCollection.get()
+            .addOnSuccessListener { uIDs ->
+                if (!uIDs.isEmpty){
+                    var uIDsToDelete = uIDs.size()
+                    for (uID in uIDs) {
+                        deletePrivateCommentsForUIDsOfSubPrivateComments(postID, uID.id) { yep ->
+                            if (yep){
+                                uID.reference.delete()
+                                    .addOnSuccessListener {
+                                        uIDsToDelete --
+                                        if (uIDsToDelete == 0){
+                                            onComplete(true)
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        onComplete(false)
+                                        Log.e("error deleteSubCollectionPrivateComments", e.message.toString(), e)
+                                    }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteSubCollectionPrivateComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deletePrivateCommentsForUIDsOfSubPrivateComments(postID: String, uiDiD: String,
+                                                                 onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(uiDiD)
+            .collection("privateComments")
+            .get()
+            .addOnSuccessListener { privateComments ->
+                if (!privateComments.isEmpty){
+                    var commentsToDelete = privateComments.size()
+                    for (comment in privateComments){
+                        val privateCommentItem = comment.toObject(CommentStructure::class.java)
+                        deleteLikesOfPrivateCommentsOfUIDsOfSub(postID, uiDiD, comment.id) { yep ->
+                            if (yep){
+                                deleteRepliesOfPrivateCommentsOfUIDsOfSub(postID, uiDiD, comment.id) { ok ->
+                                    if (ok){
+                                        comment.reference.delete()
+                                            .addOnSuccessListener {
+                                                if (privateCommentItem.commentPhoto.isNotEmpty()){
+                                                    deleteImageFromCloudStorage(privateCommentItem.commentPhoto) { onSuccess ->
+                                                        if (onSuccess){
+                                                            commentsToDelete --
+                                                            if (commentsToDelete == 0){
+                                                                onComplete(true)
+                                                            }
+                                                        }else{
+                                                            onComplete(false)
+                                                        }
+                                                    }
+                                                }else{
+                                                    commentsToDelete --
+                                                    if (commentsToDelete == 0){
+                                                        onComplete(true)
+                                                    }
+                                                }
+                                            }
+                                            .addOnFailureListener { e ->
+                                                onComplete(false)
+                                                Log.e("error deletePrivateCommentsForUIDsOfSubPrivateComments", e.message.toString(), e)
+                                            }
+                                    }else{
+                                        onComplete(false)
+                                    }
+                                }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deletePrivateCommentsForUIDsOfSubPrivateComments", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteRepliesOfPrivateCommentsOfUIDsOfSub(postID: String, uiDiD: String, commentID: String,
+                                                          onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(uiDiD)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("privateReplies")
+            .get()
+            .addOnSuccessListener { privateReplies ->
+                if (!privateReplies.isEmpty){
+                    var repliesToDelete = privateReplies.size()
+                    for (reply in privateReplies){
+                        val replyItem = reply.toObject(CommentStructure::class.java)
+                        deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub(postID, uiDiD, commentID,
+                            reply.id) { yep ->
+                            if (yep){
+                                reply.reference.delete()
+                                    .addOnSuccessListener {
+                                        if (replyItem.commentPhoto.isNotEmpty()){
+                                            deleteImageFromCloudStorage(replyItem.commentPhoto) { ok ->
+                                                if (ok){
+                                                    repliesToDelete --
+                                                    if (repliesToDelete == 0){
+                                                        onComplete(true)
+                                                    }
+                                                }else{
+                                                    onComplete(false)
+                                                }
+                                            }
+                                        }else{
+                                            repliesToDelete --
+                                            if (repliesToDelete == 0){
+                                                onComplete(true)
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener{ e ->
+                                        onComplete(false)
+                                        Log.e("error deleteRepliesOfPrivateCommentsOfUIDsOfSub", e.message.toString(), e)
+                                    }
+                            }else{
+                                onComplete(false)
+                            }
+                        }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteRepliesOfPrivateCommentsOfUIDsOfSub", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub(postID: String, uiDiD: String,
+                                                                 commentID: String, replyID: String,
+                                                                 onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(uiDiD)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("privateReplies")
+            .document(replyID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { docs ->
+                if (!docs.isEmpty){
+                    var docsToDelete = docs.size()
+                    for (doc in docs){
+                        doc.reference.delete()
+                            .addOnSuccessListener {
+                                docsToDelete --
+                                if (docsToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub", e.message.toString(), e)
+            }
+    }
+
+    private fun deleteLikesOfPrivateCommentsOfUIDsOfSub(postID: String, uiDiD: String,
+                                                        commentID: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(getUserID())
+            .collection(Constants.Posts)
+            .document(postID)
+            .collection("UIDs")
+            .document(uiDiD)
+            .collection("privateComments")
+            .document(commentID)
+            .collection("likes")
+            .get()
+            .addOnSuccessListener { likes ->
+                if (!likes.isEmpty){
+                    var likesToDelete = likes.size()
+                    for (like in likes){
+                        like.reference.delete()
+                            .addOnSuccessListener {
+                                likesToDelete --
+                                if (likesToDelete == 0){
+                                    onComplete(true)
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                onComplete(false)
+                                Log.e("error deleteLikesOfPrivateCommentsOfUIDsOfSub", e.message.toString(), e)
+                            }
+                    }
+                }else{
+                    onComplete(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error deleteLikesOfPrivateCommentsOfUIDsOfSub", e.message.toString(), e)
+            }
+    }
 
     private fun createUserName(username: String, activity: SignUpActivity){
         val userID = getUserID()
@@ -1861,18 +2687,20 @@ class FireStoreClass {
         }
     }
 
-    fun deleteImageFromCloudStorage(imageUrl: String) {
+    fun deleteImageFromCloudStorage(imageUrl: String, onComplete: (Boolean) -> Unit) {
         val storage = Firebase.storage
         val storageRef = storage.getReferenceFromUrl(imageUrl)
 
         storageRef.delete()
             .addOnSuccessListener {
                 // File deleted successfully
+                onComplete(true)
                 Log.i("Firebase Storage", "Image deleted successfully")
                 // You can perform additional actions here if needed
             }
             .addOnFailureListener { e ->
                 // An error occurred while deleting the file
+                onComplete(false)
                 Log.e("Firebase Storage", "Error deleting image: ${e.message}", e)
                 // Handle the error as needed
             }

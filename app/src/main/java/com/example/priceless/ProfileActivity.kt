@@ -303,10 +303,19 @@ class ProfileActivity : BaseActivity(), OnClickListener {
 
     fun uploadImageOnCloudSuccess(imageUrl: String){
         if (userInfo.image.isNotEmpty()){
-            FireStoreClass().deleteImageFromCloudStorage(userInfo.image)
+            FireStoreClass().deleteImageFromCloudStorage(userInfo.image) { yep ->
+                if (yep){
+                    imageNameUrl = imageUrl
+                    updateUserInfo()
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Error Adding New Image On Cloud.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }else{
+            imageNameUrl = imageUrl
+            updateUserInfo()
         }
-        imageNameUrl = imageUrl
-        updateUserInfo()
     }
 
 

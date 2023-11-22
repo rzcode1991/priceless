@@ -8,10 +8,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
 import com.example.priceless.PostStructure
 import com.example.priceless.R
@@ -44,50 +47,139 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
 
     override fun onBindViewHolder(holder: ExampleViewHolder, position: Int) {
         val currentItemPost = postList[position]
+
+        holder.layoutPostContent.visibility = View.GONE
+        holder.postImage.visibility = View.GONE
+        holder.layoutBuyPost.visibility = View.GONE
+        holder.tvPricelessPost.visibility = View.GONE
+        holder.tvPriceless.visibility = View.GONE
+        holder.tvPrice.visibility = View.GONE
+        holder.viewMore.visibility = View.GONE
+        holder.tvDeleteInvisiblePost.visibility = View.GONE
+
+
+        if (currentItemPost.visibility){
+            holder.layoutBuyPost.visibility = View.GONE
+            holder.tvPricelessPost.visibility = View.GONE
+            holder.layoutPostContent.visibility = View.VISIBLE
+            if (currentItemPost.visibility && currentItemPost.postImage.isNotEmpty()){
+                holder.postImage.visibility = View.VISIBLE
+                GlideLoader(context).loadImageUri(currentItemPost.postImage, holder.postImage)
+                holder.postImage.setOnClickListener {
+                    val intent = Intent(context, FullScreenPostImageActivity::class.java)
+                    intent.putExtra("post_image", currentItemPost.postImage)
+                    context.startActivity(intent)
+                }
+            }else{
+                holder.postImage.visibility = View.GONE
+                holder.postImage.setImageResource(R.drawable.white_image_background)
+            }
+            holder.postText.text = currentItemPost.postText
+            if (currentItemPost.visibility && currentItemPost.timeTraveler
+                && currentItemPost.price.isNotEmpty()){
+                holder.tvPrice.visibility = View.VISIBLE
+                holder.tvPrice.text = "${currentItemPost.price} $ Not Sold"
+            }else{
+                holder.tvPrice.visibility = View.GONE
+            }
+            if (currentItemPost.visibility && currentUserID == currentItemPost.userId){
+                holder.viewMore.visibility = View.VISIBLE
+                holder.viewMore.setOnClickListener {
+                    val intent = Intent(context, EditPostActivity::class.java)
+                    intent.putExtra("entire_post", currentItemPost)
+                    context.startActivity(intent)
+                }
+            }else{
+                holder.viewMore.visibility = View.GONE
+            }
+            if (currentItemPost.visibility && currentItemPost.timeTraveler && currentItemPost.price.isEmpty()){
+                holder.tvPriceless.visibility = View.VISIBLE
+            }else{
+                holder.tvPriceless.visibility = View.GONE
+            }
+        }else{
+            holder.layoutPostContent.visibility = View.GONE
+            if (currentItemPost.price.isNotEmpty()){
+                holder.layoutBuyPost.visibility = View.VISIBLE
+                holder.tvPriceToBuy.text = "${currentItemPost.price} $"
+                holder.btnGoToBuy.setOnClickListener {
+                    // TODO:
+                }
+                val millis = currentItemPost.timeToShare.toLong()*1000
+                val timeToShareToShow = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    .format(Date(millis))
+                holder.tvTimeToShare.text = "Or It Will Be Visible At: $timeToShareToShow"
+            }else{
+                holder.tvPricelessPost.visibility = View.VISIBLE
+            }
+        }
+
+        if (currentUserID == currentItemPost.userId && !currentItemPost.visibility){
+            holder.tvDeleteInvisiblePost.visibility = View.VISIBLE
+            holder.tvDeleteInvisiblePost.setOnClickListener {
+                val builder = AlertDialog.Builder(context)
+                builder.setTitle("DELETE POST?")
+                builder.setMessage("post will be deleted permanently!")
+                builder.setIcon(R.drawable.ic_round_warning_24)
+                builder.setPositiveButton("Yes") { dialog, _ ->
+                    showProgressDialog()
+                    FireStoreClass().deletePostOnFireStoreWithCallback(currentItemPost.postID) { onComplete ->
+                        hideProgressDialog()
+                        if (onComplete){
+                            if (currentItemPost.postImage.isNotEmpty()){
+                                FireStoreClass().deleteImageFromCloudStorage(currentItemPost.postImage) { ok ->
+                                    if (ok){
+                                        val itemPosition = postList.indexOf(currentItemPost)
+                                        if (itemPosition != -1) {
+                                            postList.removeAt(itemPosition)
+                                            notifyItemRemoved(itemPosition)
+                                        }
+                                        Toast.makeText(context, "Post Deleted.", Toast.LENGTH_LONG).show()
+                                    }else{
+                                        Toast.makeText(context, "Error While Deleting Post.", Toast.LENGTH_LONG).show()
+                                    }
+                                }
+                            }else{
+                                val itemPosition = postList.indexOf(currentItemPost)
+                                if (itemPosition != -1) {
+                                    postList.removeAt(itemPosition)
+                                    notifyItemRemoved(itemPosition)
+                                }
+                                Toast.makeText(context, "Post Deleted.", Toast.LENGTH_LONG).show()
+                            }
+                        }else{
+                            Toast.makeText(context, "Error While Deleting Post.", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    dialog.dismiss()
+                }
+                builder.setNeutralButton("Cancel") {dialog, _ ->
+                    dialog.dismiss()
+                }
+                builder.setCancelable(false)
+                builder.create().show()
+            }
+        }else{
+            holder.tvDeleteInvisiblePost.visibility = View.GONE
+        }
         if (currentItemPost.profilePicture.isNotEmpty()){
             GlideLoader(context).loadImageUri(currentItemPost.profilePicture, holder.profilePic)
         }else{
             holder.profilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
         }
-        if (currentItemPost.postImage.isNotEmpty()){
-            holder.postImage.visibility = View.VISIBLE
-            GlideLoader(context).loadImageUri(currentItemPost.postImage, holder.postImage)
-            holder.postImage.setOnClickListener {
-                val intent = Intent(context, FullScreenPostImageActivity::class.java)
-                intent.putExtra("post_image", currentItemPost.postImage)
-                context.startActivity(intent)
-            }
-        }else{
-            holder.postImage.visibility = View.GONE
-            //holder.postText.layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT
-            holder.postImage.setImageResource(R.drawable.white_image_background)
-        }
-        holder.postText.text = currentItemPost.postText
+
         if (currentItemPost.timeCreatedToShow.isNotEmpty()){
             holder.timeCreatedText.text = "created at ${currentItemPost.timeCreatedToShow}"
         }else{
             holder.timeCreatedText.text = "err getting time online"
         }
-        if (currentItemPost.timeTraveler){
-            holder.tvPriceless.visibility = View.VISIBLE
-        }else{
-            holder.tvPriceless.visibility = View.GONE
-        }
+
         holder.profilePic.setOnClickListener {
             val intent = Intent(context, UserProfileActivity::class.java)
             intent.putExtra("userID", currentItemPost.userId)
             context.startActivity(intent)
         }
-        if (currentUserID == currentItemPost.userId){
-            holder.viewMore.visibility = View.VISIBLE
-            holder.viewMore.setOnClickListener {
-                val intent = Intent(context, EditPostActivity::class.java)
-                intent.putExtra("entire_post", currentItemPost)
-                context.startActivity(intent)
-            }
-        }else{
-            holder.viewMore.visibility = View.GONE
-        }
+
         holder.userName.text = currentItemPost.userName
 
         FireStoreClass().getNumberOfLikesForPost(currentItemPost.postID, currentItemPost.userId) { number ->
@@ -171,6 +263,14 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
         val tvLikes: TextView = itemView.findViewById(R.id.tv_likes)
         val ibLike: ImageButton = itemView.findViewById(R.id.ib_like)
         val tvGoToComments: TextView = itemView.findViewById(R.id.tv_goto_comments)
+        val tvPrice: TextView = itemView.findViewById(R.id.tv_price)
+        val layoutPostContent: LinearLayout = itemView.findViewById(R.id.layout_post_content)
+        val layoutBuyPost: LinearLayout = itemView.findViewById(R.id.layout_buy_post)
+        val tvPriceToBuy: TextView = itemView.findViewById(R.id.tv_price_to_buy)
+        val btnGoToBuy: Button = itemView.findViewById(R.id.btn_go_to_buy)
+        val tvTimeToShare: TextView = itemView.findViewById(R.id.tv_time_to_share)
+        val tvDeleteInvisiblePost: TextView = itemView.findViewById(R.id.tv_delete_invisible_post)
+        val tvPricelessPost: TextView = itemView.findViewById(R.id.tv_priceless_post)
     }
 
 }

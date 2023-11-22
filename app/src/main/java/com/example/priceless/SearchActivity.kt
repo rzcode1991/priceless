@@ -397,7 +397,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
             if (allPosts.isNullOrEmpty()) {
                 recyclerView.visibility = View.GONE
                 hideProgressDialog()
-                Toast.makeText(this@SearchActivity, "all posts isNullOrEmpty", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@SearchActivity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
@@ -436,6 +436,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
                     }
 
                     if (updatePostJob.await()) {
+                        postToBeUpdated.visibility = true
                         postToBeUpdated.timeCreatedMillis = secondsNow
                         visiblePosts.add(postToBeUpdated)
                         Log.d("--- visible posts after adding 1 post for update:", "${visiblePosts.size}")
@@ -451,6 +452,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
                         postHashMap["timeCreatedMillis"] = secondsNow
                         batchUpdates[eachPost.postID] = postHashMap
                         eachPost.timeCreatedMillis = secondsNow
+                        eachPost.visibility = true
                     }
                     val batchUpdateJob = async {
                         val deferredCompletable = CompletableDeferred<Boolean>()
@@ -468,14 +470,14 @@ class SearchActivity : BaseActivity(), OnClickListener {
                 }
             }
             Log.d("user is:", "$userInfo")
-            for (i in visiblePosts){
+            for (i in allPosts){
                 i.profilePicture = userInfo.image
                 i.userName = userInfo.userName
             }
-            visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-            Log.d("final visible posts are:", "$visiblePosts")
+            allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
+            //Log.d("final visible posts are:", "$visiblePosts")
             recyclerView.visibility = VISIBLE
-            val adapter = RecyclerviewAdapter(this@SearchActivity, visiblePosts, currentUserID)
+            val adapter = RecyclerviewAdapter(this@SearchActivity, allPosts, currentUserID)
             adapter.notifyDataSetChanged()
             val layoutManager = LinearLayoutManager(this@SearchActivity)
             recyclerView.layoutManager = layoutManager

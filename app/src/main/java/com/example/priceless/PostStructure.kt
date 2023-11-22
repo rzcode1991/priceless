@@ -14,5 +14,7 @@ data class PostStructure(var profilePicture: String = "",
                          var timeToShare: String = "now",
                          var visibility: Boolean = true,
                          var timeTraveler: Boolean = false,
+                         var price: String = "",
+                         var buyerID: String = "",
                          var postID: String = "",
                          var edited: Boolean = false): Parcelable

@@ -181,10 +181,19 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
 
     fun uploadImageOnCloudSuccess(newImageUrl: String){
         if (comment.commentPhoto.isNotEmpty()){
-            FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+            FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yep ->
+                if (yep){
+                    newImageNameUrl = newImageUrl
+                    updateComment()
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Error Adding New Image On Cloud.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }else{
+            newImageNameUrl = newImageUrl
+            updateComment()
         }
-        newImageNameUrl = newImageUrl
-        updateComment()
     }
 
 
@@ -306,11 +315,21 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
         FireStoreClass().deletePublicReply(comment) { success ->
             if (success){
                 if (comment.commentPhoto.isNotEmpty()){
-                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yep ->
+                        if (yep){
+                            hideProgressDialog()
+                            Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
+                            finish()
+                        }else{
+                            hideProgressDialog()
+                            showErrorSnackBar("Error While Deleting Reply.", true)
+                        }
+                    }
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
+                    finish()
                 }
-                hideProgressDialog()
-                Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
-                finish()
             }else{
                 hideProgressDialog()
                 showErrorSnackBar("Error While Deleting Reply.", true)
@@ -323,11 +342,21 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
             comment.postID, comment.commentID) { success ->
             if (success){
                 if (comment.commentPhoto.isNotEmpty()){
-                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { ok ->
+                        if (ok){
+                            hideProgressDialog()
+                            Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
+                            finish()
+                        }else{
+                            hideProgressDialog()
+                            showErrorSnackBar("Error While Deleting Comment.", true)
+                        }
+                    }
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
+                    finish()
                 }
-                hideProgressDialog()
-                Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
-                finish()
             }else{
                 hideProgressDialog()
                 showErrorSnackBar("Error While Deleting Comment.", true)
@@ -340,11 +369,21 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
             comment.postID, comment.writerUID, comment.commentID) { onComplete ->
             if (onComplete){
                 if (comment.commentPhoto.isNotEmpty()){
-                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yep ->
+                        if (yep){
+                            hideProgressDialog()
+                            Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
+                            finish()
+                        }else{
+                            hideProgressDialog()
+                            showErrorSnackBar("Error While Deleting Comment.", true)
+                        }
+                    }
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
+                    finish()
                 }
-                hideProgressDialog()
-                Toast.makeText(this, "Comment Deleted.", Toast.LENGTH_LONG).show()
-                finish()
             }else{
                 hideProgressDialog()
                 showErrorSnackBar("Error While Deleting Comment.", true)
@@ -356,11 +395,21 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
         FireStoreClass().deletePrivateReply(comment) { onComplete ->
             if (onComplete){
                 if (comment.commentPhoto.isNotEmpty()){
-                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto)
+                    FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yes ->
+                        if (yes){
+                            hideProgressDialog()
+                            Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
+                            finish()
+                        }else{
+                            hideProgressDialog()
+                            showErrorSnackBar("Error While Deleting Reply.", true)
+                        }
+                    }
+                }else{
+                    hideProgressDialog()
+                    Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
+                    finish()
                 }
-                hideProgressDialog()
-                Toast.makeText(this, "Reply Deleted.", Toast.LENGTH_LONG).show()
-                finish()
             }else{
                 hideProgressDialog()
                 showErrorSnackBar("Error While Deleting Reply.", true)
