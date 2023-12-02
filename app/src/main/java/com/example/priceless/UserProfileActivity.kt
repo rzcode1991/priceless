@@ -137,12 +137,19 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
         showProgressDialog()
         CoroutineScope(Dispatchers.Main).launch {
             val deferredAllPosts = async { FireStoreClass().getPostsFromFireStore(UID) }
-            val allPosts = deferredAllPosts.await()
+            val allPostsList = deferredAllPosts.await()
+            val allPosts = ArrayList<PostStructure>()
 
-            if (allPosts.isNullOrEmpty()) {
+            if (!allPostsList.isNullOrEmpty()) {
+                for (post in allPostsList){
+                    if (post.postID.isNotEmpty() && post.buyerID.isEmpty()){
+                        allPosts.add(post)
+                    }
+                }
+            }else{
                 recyclerView.visibility = View.GONE
                 hideProgressDialog()
-                Toast.makeText(this@UserProfileActivity, "all posts isNullOrEmpty", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@UserProfileActivity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
                 return@launch
             }
 
@@ -173,8 +180,8 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
                     postHashMap["timeCreatedMillis"] = secondsNow
                     val updatePostJob = async {
                         val deferredCompletable = CompletableDeferred<Boolean>()
-                        FireStoreClass().updatePostOnFireStore(this@UserProfileActivity,
-                            postToBeUpdated.userId, postHashMap, postToBeUpdated.postID) { onComplete ->
+                        FireStoreClass().updatePostOnFireStore(postToBeUpdated.userId, postHashMap,
+                            postToBeUpdated.postID) { onComplete ->
                             deferredCompletable.complete(onComplete)
                         }
                         deferredCompletable.await()
@@ -213,14 +220,13 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
                 }
             }
             Log.d("user is:", "$userInfo")
-            for (i in visiblePosts){
+            for (i in allPosts){
                 i.profilePicture = userInfo.image
                 i.userName = userInfo.userName
             }
-            visiblePosts.sortByDescending { it.timeCreatedMillis.toLong() }
-            Log.d("final visible posts are:", "$visiblePosts")
+            allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
             recyclerView.visibility = VISIBLE
-            val adapter = RecyclerviewAdapter(this@UserProfileActivity, visiblePosts, currentUserID)
+            val adapter = RecyclerviewAdapter(this@UserProfileActivity, allPosts, currentUserID)
             adapter.notifyDataSetChanged()
             val layoutManager = LinearLayoutManager(this@UserProfileActivity)
             recyclerView.layoutManager = layoutManager

@@ -162,7 +162,7 @@
                     android:id="@+id/text_input_Layout_price"
                     android:layout_width="200dp"
                     android:layout_height="wrap_content"
-                    android:hint="$"
+                    android:hint="TON"
                     android:visibility="gone"
                     android:layout_gravity="center"
                     android:layout_marginTop="10dp"
@@ -180,6 +180,20 @@
                         android:textColor="#2b2d42"/>
 
                 </com.google.android.material.textfield.TextInputLayout>
+
+                <TextView
+                    android:id="@+id/tv_go_to_profile_from_create_post"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="You Should Add Your TON Wallet Address to Your Profile To Be Able To Set a Price."
+                    android:gravity="center"
+                    android:textColor="@color/colorPrimaryText"
+                    android:textSize="15sp"
+                    android:visibility="gone"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginBottom="20dp"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"/>
 
             </LinearLayout>
 

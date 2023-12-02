@@ -113,21 +113,23 @@ class CommentsActivity : BaseActivity(), OnClickListener {
             ivProfilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
         }
         tvUserName.text = post.userName
-        if (!post.visibility && post.price.isNotEmpty()){
-            layoutPostContent.visibility = View.GONE
-            layoutBuyPost.visibility = VISIBLE
-            tvPricelessPost.visibility = View.GONE
-            tvPriceToBuy.text = "${post.price} $"
-            btnGoToBuy.setOnClickListener(this)
-            val millis = post.timeToShare.toLong()*1000
-            val timeToShareToShow = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                .format(Date(millis))
-            tvTimeToShare.text = "Or It Will Be Visible At: $timeToShareToShow"
-        }else if (!post.visibility && post.price.isEmpty()){
-            tvPricelessPost.visibility = VISIBLE
-            layoutPostContent.visibility = View.GONE
-            layoutBuyPost.visibility = View.GONE
-        }else if (post.visibility){
+        if (!post.visibility){
+            if (post.price.isNotEmpty()){
+                layoutPostContent.visibility = View.GONE
+                layoutBuyPost.visibility = VISIBLE
+                tvPricelessPost.visibility = View.GONE
+                tvPriceToBuy.text = "${post.price} TON"
+                btnGoToBuy.setOnClickListener(this)
+                val millis = post.timeToShare.toLong()*1000
+                val timeToShareToShow = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                    .format(Date(millis))
+                tvTimeToShare.text = "Or It Will Be Visible At: $timeToShareToShow"
+            }else{
+                tvPricelessPost.visibility = VISIBLE
+                layoutPostContent.visibility = View.GONE
+                layoutBuyPost.visibility = View.GONE
+            }
+        }else{
             layoutBuyPost.visibility = View.GONE
             tvPricelessPost.visibility = View.GONE
             layoutPostContent.visibility = VISIBLE
@@ -142,7 +144,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
             if (post.timeTraveler && post.price.isNotEmpty() &&
                 post.buyerID.isEmpty()){
                 tvPrice.visibility = VISIBLE
-                tvPrice.text = "${post.price} $ Not Sold"
+                tvPrice.text = "${post.price} TON, Not Sold"
             }else{
                 tvPrice.visibility = View.GONE
             }
@@ -246,7 +248,9 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     }
                 }
                 R.id.btn_go_to_buy_comments -> {
-                    //TODO:
+                    val intent = Intent(this@CommentsActivity, BuyPostActivity::class.java)
+                    intent.putExtra("post_ID_and_user_ID", Pair(post.postID, post.userId))
+                    startActivity(intent)
                 }
             }
         }
@@ -325,6 +329,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
 
     private fun loadComments(){
         CoroutineScope(Dispatchers.Main).launch {
+            val allComments = ArrayList<CommentStructure>()
             val commentsToShow = ArrayList<CommentStructure>()
 
             if (currentUserID == post.userId){
@@ -335,7 +340,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     }
                     val publicCommentsFO = deferredCompletable.await()
                     if (publicCommentsFO != null){
-                        commentsToShow.addAll(publicCommentsFO)
+                        allComments.addAll(publicCommentsFO)
                     }
                 }
                 pubComForOwnerJob.await()
@@ -364,7 +369,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                         }
                         val privateComments = deferredCompletable.await()
                         if (privateComments != null){
-                            commentsToShow.addAll(privateComments)
+                            allComments.addAll(privateComments)
                         }
                     }
                     job2.await()
@@ -377,7 +382,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     }
                     val pubComments = deferredCompletable.await()
                     if (pubComments != null){
-                        commentsToShow.addAll(pubComments)
+                        allComments.addAll(pubComments)
                     }
                 }
                 pubComJob.await()
@@ -390,13 +395,18 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     }
                     val prComments = deferredCompletable4.await()
                     if (prComments != null){
-                        commentsToShow.addAll(prComments)
+                        allComments.addAll(prComments)
                     }
                 }
                 privateComJob.await()
 
             }
 
+            for (comment in allComments){
+                if (comment.commentID.isNotEmpty()){
+                    commentsToShow.add(comment)
+                }
+            }
             if (commentsToShow.isNotEmpty()){
                 val userGroupedComments = commentsToShow.groupBy { it.writerUID }
                 val userInfoJobs = userGroupedComments.map { (userId, groupComments) ->

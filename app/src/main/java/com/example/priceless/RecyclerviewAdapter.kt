@@ -1,27 +1,16 @@
 package com.example.priceless
 
-import android.app.Activity
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.RecyclerView
-import com.example.priceless.PostStructure
-import com.example.priceless.R
-import com.example.priceless.ui.home.HomeFragment
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<PostStructure>,
                           private val currentUserID: String):
@@ -57,7 +46,6 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
         holder.viewMore.visibility = View.GONE
         holder.tvDeleteInvisiblePost.visibility = View.GONE
 
-
         if (currentItemPost.visibility){
             holder.layoutBuyPost.visibility = View.GONE
             holder.tvPricelessPost.visibility = View.GONE
@@ -78,7 +66,7 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
             if (currentItemPost.visibility && currentItemPost.timeTraveler
                 && currentItemPost.price.isNotEmpty()){
                 holder.tvPrice.visibility = View.VISIBLE
-                holder.tvPrice.text = "${currentItemPost.price} $ Not Sold"
+                holder.tvPrice.text = "${currentItemPost.price} TON, Not Sold"
             }else{
                 holder.tvPrice.visibility = View.GONE
             }
@@ -101,9 +89,11 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
             holder.layoutPostContent.visibility = View.GONE
             if (currentItemPost.price.isNotEmpty()){
                 holder.layoutBuyPost.visibility = View.VISIBLE
-                holder.tvPriceToBuy.text = "${currentItemPost.price} $"
+                holder.tvPriceToBuy.text = "${currentItemPost.price} TON"
                 holder.btnGoToBuy.setOnClickListener {
-                    // TODO:
+                    val intent = Intent(context, BuyPostActivity::class.java)
+                    intent.putExtra("post_ID_and_user_ID", Pair(currentItemPost.postID, currentItemPost.userId))
+                    context.startActivity(intent)
                 }
                 val millis = currentItemPost.timeToShare.toLong()*1000
                 val timeToShareToShow = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
@@ -123,7 +113,8 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
                 builder.setIcon(R.drawable.ic_round_warning_24)
                 builder.setPositiveButton("Yes") { dialog, _ ->
                     showProgressDialog()
-                    FireStoreClass().deletePostOnFireStoreWithCallback(currentItemPost.postID) { onComplete ->
+                    FireStoreClass().deletePostOnFireStoreWithCallback(currentItemPost.userId,
+                        currentItemPost.postID) { onComplete ->
                         hideProgressDialog()
                         if (onComplete){
                             if (currentItemPost.postImage.isNotEmpty()){

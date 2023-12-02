@@ -38,26 +38,4 @@ class MainActivity : BaseActivity() {
     }
 
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.menu_options, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.menu_profile -> {
-                val intent = Intent(this, ProfileActivity::class.java)
-                intent.putExtra(Constants.User_Extra_Details, userInfo)
-                startActivity(intent)
-                true
-            }
-            R.id.menu_empty -> {
-                Toast.makeText(this, "Menu empty clicked", Toast.LENGTH_SHORT).show()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-
 }

@@ -351,6 +351,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
 
     private fun loadReplies(){
         CoroutineScope(Dispatchers.Main).launch {
+            val allReplies = ArrayList<CommentStructure>()
             val replies = ArrayList<CommentStructure>()
             if (comment.isPrivate){
                 val privateRepliesJob = async {
@@ -360,7 +361,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
                     }
                     val privateReplies = deferredCompletable.await()
                     if (privateReplies != null){
-                        replies.addAll(privateReplies)
+                        allReplies.addAll(privateReplies)
                     }
                 }
                 privateRepliesJob.await()
@@ -372,12 +373,17 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
                     }
                     val publicReplies = deferredCompletable.await()
                     if (publicReplies != null){
-                        replies.addAll(publicReplies)
+                        allReplies.addAll(publicReplies)
                     }
                 }
                 publicRepliesJob.await()
             }
 
+            for (reply in allReplies){
+                if (reply.commentID.isNotEmpty()){
+                    replies.add(reply)
+                }
+            }
             if (replies.isNotEmpty()){
                 val userGroupedReplies = replies.groupBy { it.writerUID }
                 val userInfoJobs = userGroupedReplies.map { (userId, groupReplies) ->

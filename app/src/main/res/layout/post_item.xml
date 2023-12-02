@@ -90,7 +90,7 @@
                     android:id="@+id/tv_price_to_buy"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="500 $"
+                    android:text=""
                     android:textSize="20sp"
                     android:textColor="@color/colorPrimaryText"/>
 
@@ -166,7 +166,7 @@
                         android:id="@+id/tv_price"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="$"
+                        android:text=""
                         android:layout_gravity="start|center"
                         android:layout_marginTop="2dp"
                         android:textSize="12sp"

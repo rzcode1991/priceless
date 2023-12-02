@@ -361,33 +361,96 @@ class FireStoreClass {
             }
     }
 
-
-    fun createPostOnFireStore(activity: CreatePostActivity, post: PostStructure) {
-        val postCollection = mFireStore.collection(Constants.USERS)
-            .document(getUserID())
-            .collection(Constants.Posts)
-
-        // Add the post to FireStore without an ID (FireStore will generate one)
-        postCollection.add(post)
-            .addOnSuccessListener { documentReference ->
-                // Here, documentReference.id gives you the ID of the newly created post
-                val postID = documentReference.id
-
-                postCollection.document(postID).update("postID", postID)
-                    .addOnSuccessListener {
-                        // This block is executed if the postID update is successful
-                        activity.createPostSuccessful()
-                    }
-                    .addOnFailureListener { e ->
-                        activity.hideProgressDialog()
-                        Log.e(activity.javaClass.simpleName, "Error while updating postID when creating new post", e)
-                    }
+    fun saveTransaction(transactionHash: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection("transactions")
+            .add(mapOf("transaction" to transactionHash))
+            .addOnSuccessListener {
+                onComplete(true)
             }
             .addOnFailureListener { e ->
-                activity.hideProgressDialog()
+                onComplete(false)
+                Log.e("error saveTransactions", e.message.toString(), e)
+            }
+    }
+
+    fun transactionExists(transactionHash: String, onComplete: (Boolean) -> Unit){
+        mFireStore.collection("transactions")
+            .whereEqualTo("transaction", transactionHash)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                if (!snapshot.isEmpty){
+                    onComplete(true)
+                }else{
+                    onComplete(false)
+                }
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error transactionExists", e.message.toString(), e)
+            }
+    }
+
+    private fun updatePostIDAfterCreatePost(activity: CreatePostActivity, userID: String, postID: String){
+        mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection(Constants.Posts)
+            .document(postID)
+            .update("postID", postID)
+            .addOnSuccessListener {
+                activity.createPostSuccessful()
+            }
+            .addOnFailureListener { e ->
+                deletePostOnFireStoreWithCallback(userID, postID) {
+                    activity.createPostFailed()
+                }
+                Log.e(activity.javaClass.simpleName, "Error while updating postID when creating new post", e)
+            }
+    }
+
+    fun createPostOnFireStore(activity: CreatePostActivity, userID: String, post: PostStructure) {
+        mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection(Constants.Posts)
+            .add(post)
+            .addOnSuccessListener { documentReference ->
+                val postID = documentReference.id
+                updatePostIDAfterCreatePost(activity, userID, postID)
+            }
+            .addOnFailureListener { e ->
+                activity.createPostFailed()
                 Log.e(activity.javaClass.simpleName, "Error while creating post on FireStore", e)
             }
 
+    }
+
+    fun addPostToSoldPosts(userID: String, post: PostStructure, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection("soldPosts")
+            .document(post.timeCreatedMillis)
+            .set(post)
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error addPostToSoldPosts", e.message.toString(), e)
+            }
+    }
+
+    fun addPostToBoughtPosts(userID: String, post: PostStructure, onComplete: (Boolean) -> Unit){
+        mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection("boughtPosts")
+            .document(post.timeCreatedMillis)
+            .set(post)
+            .addOnSuccessListener {
+                onComplete(true)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false)
+                Log.e("error addPostToBoughtPosts", e.message.toString(), e)
+            }
     }
 
     fun addPrivateReplyForPrivateCommenttttttttt(postOwnerUID: String, postID: String,
@@ -1700,7 +1763,7 @@ class FireStoreClass {
     }
 
 
-    fun updatePostOnFireStore(activity: Activity, userID: String, postHashMap: HashMap<String, Any>,
+    fun updatePostOnFireStore(userID: String, postHashMap: HashMap<String, Any>,
                               postID: String, onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
             .document(userID)
@@ -1712,7 +1775,7 @@ class FireStoreClass {
             }
             .addOnFailureListener { e ->
                 onComplete(false)
-                Log.e(activity.javaClass.simpleName, "update post on fireStore failed", e)
+                Log.e("update post on fireStore failed", e.message.toString(), e)
             }
     }
 
@@ -1778,16 +1841,16 @@ class FireStoreClass {
             }
     }
 
-    fun deletePostOnFireStoreWithCallback(postID: String, onComplete: (Boolean) -> Unit){
+    fun deletePostOnFireStoreWithCallback(userID: String, postID: String, onComplete: (Boolean) -> Unit){
 
-        deleteSubCollectionPublicComments(postID) { yep ->
+        deleteSubCollectionPublicComments(userID, postID) { yep ->
             if (yep){
-                deleteSubCollectionPrivateComments(postID) { ok ->
+                deleteSubCollectionPrivateComments(userID, postID) { ok ->
                     if (ok){
-                        deleteSubCollectionLikesOfPost(postID) { success ->
+                        deleteSubCollectionLikesOfPost(userID, postID) { success ->
                             if (success){
                                 mFireStore.collection(Constants.USERS)
-                                    .document(getUserID())
+                                    .document(userID)
                                     .collection(Constants.Posts)
                                     .document(postID)
                                     .delete()
@@ -1842,9 +1905,9 @@ class FireStoreClass {
     }
      */
 
-    private fun deleteSubCollectionPublicComments(postID: String, onComplete: (Boolean) -> Unit) {
+    private fun deleteSubCollectionPublicComments(userID: String, postID: String, onComplete: (Boolean) -> Unit) {
         val publicCommentsCollection = mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("publicComments")
@@ -1855,9 +1918,9 @@ class FireStoreClass {
                     var commentsToDelete = publicComments.size()
                     for (comment in publicComments) {
                         val publicCommentItem = comment.toObject(CommentStructure::class.java)
-                        deleteLikesOfSubPublicComments(comment.id, postID) { onSuccess ->
+                        deleteLikesOfSubPublicComments(userID, comment.id, postID) { onSuccess ->
                             if (onSuccess){
-                                deleteRepliesOfSubPublicComments(postID, comment.id) { succeed ->
+                                deleteRepliesOfSubPublicComments(userID, postID, comment.id) { succeed ->
                                     if (succeed){
                                         comment.reference.delete()
                                             .addOnSuccessListener {
@@ -1902,10 +1965,10 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteRepliesOfSubPublicComments(postID: String, commentID: String,
+    private fun deleteRepliesOfSubPublicComments(userID: String, postID: String, commentID: String,
                                                  onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("publicComments")
@@ -1917,7 +1980,7 @@ class FireStoreClass {
                     var repliesToDelete = replies.size()
                     for (reply in replies){
                         val replyItem = reply.toObject(CommentStructure::class.java)
-                        deleteLikesOfRepliesOfSubPublicComments(postID, commentID, reply.id) { onSuccess ->
+                        deleteLikesOfRepliesOfSubPublicComments(userID, postID, commentID, reply.id) { onSuccess ->
                             if (onSuccess){
                                 reply.reference.delete()
                                     .addOnSuccessListener {
@@ -1958,10 +2021,10 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteLikesOfRepliesOfSubPublicComments(postID: String, commentID: String,
+    private fun deleteLikesOfRepliesOfSubPublicComments(userID: String, postID: String, commentID: String,
                                                         replyID: String, onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("publicComments")
@@ -1996,10 +2059,10 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteLikesOfSubPublicComments(commentID: String, postID: String,
+    private fun deleteLikesOfSubPublicComments(userID: String, commentID: String, postID: String,
                                                onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("publicComments")
@@ -2032,9 +2095,9 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteSubCollectionLikesOfPost(postID: String, onComplete: (Boolean) -> Unit) {
+    private fun deleteSubCollectionLikesOfPost(userID: String, postID: String, onComplete: (Boolean) -> Unit) {
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("likes")
@@ -2065,9 +2128,9 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteSubCollectionPrivateComments(postID: String, onComplete: (Boolean) -> Unit) {
+    private fun deleteSubCollectionPrivateComments(userID: String, postID: String, onComplete: (Boolean) -> Unit) {
         val uIDsCollection = mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("UIDs")
@@ -2077,7 +2140,7 @@ class FireStoreClass {
                 if (!uIDs.isEmpty){
                     var uIDsToDelete = uIDs.size()
                     for (uID in uIDs) {
-                        deletePrivateCommentsForUIDsOfSubPrivateComments(postID, uID.id) { yep ->
+                        deletePrivateCommentsForUIDsOfSubPrivateComments(userID, postID, uID.id) { yep ->
                             if (yep){
                                 uID.reference.delete()
                                     .addOnSuccessListener {
@@ -2105,10 +2168,10 @@ class FireStoreClass {
             }
     }
 
-    private fun deletePrivateCommentsForUIDsOfSubPrivateComments(postID: String, uiDiD: String,
+    private fun deletePrivateCommentsForUIDsOfSubPrivateComments(userID: String, postID: String, uiDiD: String,
                                                                  onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("UIDs")
@@ -2120,9 +2183,9 @@ class FireStoreClass {
                     var commentsToDelete = privateComments.size()
                     for (comment in privateComments){
                         val privateCommentItem = comment.toObject(CommentStructure::class.java)
-                        deleteLikesOfPrivateCommentsOfUIDsOfSub(postID, uiDiD, comment.id) { yep ->
+                        deleteLikesOfPrivateCommentsOfUIDsOfSub(userID, postID, uiDiD, comment.id) { yep ->
                             if (yep){
-                                deleteRepliesOfPrivateCommentsOfUIDsOfSub(postID, uiDiD, comment.id) { ok ->
+                                deleteRepliesOfPrivateCommentsOfUIDsOfSub(userID, postID, uiDiD, comment.id) { ok ->
                                     if (ok){
                                         comment.reference.delete()
                                             .addOnSuccessListener {
@@ -2167,10 +2230,10 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteRepliesOfPrivateCommentsOfUIDsOfSub(postID: String, uiDiD: String, commentID: String,
+    private fun deleteRepliesOfPrivateCommentsOfUIDsOfSub(userID: String, postID: String, uiDiD: String, commentID: String,
                                                           onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("UIDs")
@@ -2184,7 +2247,7 @@ class FireStoreClass {
                     var repliesToDelete = privateReplies.size()
                     for (reply in privateReplies){
                         val replyItem = reply.toObject(CommentStructure::class.java)
-                        deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub(postID, uiDiD, commentID,
+                        deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub(userID, postID, uiDiD, commentID,
                             reply.id) { yep ->
                             if (yep){
                                 reply.reference.delete()
@@ -2226,11 +2289,11 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub(postID: String, uiDiD: String,
+    private fun deleteLikesOfRepliesOfPrivateCommentsOfUIDsOfSub(userID: String, postID: String, uiDiD: String,
                                                                  commentID: String, replyID: String,
                                                                  onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("UIDs")
@@ -2267,10 +2330,10 @@ class FireStoreClass {
             }
     }
 
-    private fun deleteLikesOfPrivateCommentsOfUIDsOfSub(postID: String, uiDiD: String,
+    private fun deleteLikesOfPrivateCommentsOfUIDsOfSub(userID: String, postID: String, uiDiD: String,
                                                         commentID: String, onComplete: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
-            .document(getUserID())
+            .document(userID)
             .collection(Constants.Posts)
             .document(postID)
             .collection("UIDs")
@@ -2546,7 +2609,7 @@ class FireStoreClass {
 
 
 
-    fun getASinglePostFromFireStoreeeeee(userID: String, postId: String, callback: (PostStructure?) -> Unit) {
+    fun getASinglePostFromFireStore(userID: String, postId: String, callback: (PostStructure?) -> Unit) {
         mFireStore.collection(Constants.USERS)
             .document(userID)
             .collection(Constants.Posts)
@@ -2568,6 +2631,35 @@ class FireStoreClass {
                 callback(null)
                 Log.e("Error getting posts from FireStore", e.message.toString(), e)
             }
+    }
+
+    private var postListener: ListenerRegistration? = null
+    fun stopPostListener(){
+        postListener?.remove()
+    }
+
+    fun listenForSinglePostChanges(userID: String, postId: String, callback: (PostStructure?) -> Unit) {
+        val postRef = mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection(Constants.Posts)
+            .document(postId)
+
+        postListener = postRef.addSnapshotListener { documentSnapshot, e ->
+            if (e != null) {
+                Log.e("-----Error listening for post changes", e.message.toString(), e)
+                callback(null)
+                return@addSnapshotListener
+            }
+
+            if (documentSnapshot != null && documentSnapshot.exists()) {
+                val post = documentSnapshot.toObject(PostStructure::class.java)
+                callback(post)
+                Log.d("------post received", "$post")
+            } else {
+                callback(null)
+                Log.d("------post DID NOT received", "err")
+            }
+        }
     }
 
 
@@ -2594,6 +2686,58 @@ class FireStoreClass {
             }
         } catch (e: Exception) {
             Log.e("Error getting posts from FireStore", "Error getting posts from FireStore", e)
+            null
+        }
+    }
+
+    suspend fun getBoughtPosts(userID: String): ArrayList<PostStructure>? = coroutineScope {
+        return@coroutineScope try {
+            val snapshot = mFireStore.collection(Constants.USERS)
+                .document(userID)
+                .collection("boughtPosts")
+                .get()
+                .await()
+
+            if (!snapshot.isEmpty) {
+                val posts = ArrayList<PostStructure>()
+                for (document in snapshot.documents) {
+                    val post = document.toObject(PostStructure::class.java)
+                    if (post != null) {
+                        posts.add(post)
+                    }
+                }
+                posts
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("Error getting bought posts from FireStore", e.message.toString(), e)
+            null
+        }
+    }
+
+    suspend fun getSoldPosts(userID: String): ArrayList<PostStructure>? = coroutineScope {
+        return@coroutineScope try {
+            val snapshot = mFireStore.collection(Constants.USERS)
+                .document(userID)
+                .collection("soldPosts")
+                .get()
+                .await()
+
+            if (!snapshot.isEmpty) {
+                val posts = ArrayList<PostStructure>()
+                for (document in snapshot.documents) {
+                    val post = document.toObject(PostStructure::class.java)
+                    if (post != null) {
+                        posts.add(post)
+                    }
+                }
+                posts
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Log.e("Error getting sold posts from FireStore", e.message.toString(), e)
             null
         }
     }

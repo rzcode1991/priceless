@@ -20,6 +20,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.*
 import java.io.IOException
+import java.math.BigDecimal
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,7 +35,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private lateinit var etPostText: TextInputEditText
     private lateinit var ivPostImage: ImageView
     private lateinit var tvSendPost: TextView
-    private lateinit var userInfo: User
+    private var userInfo: User? = null
     private var imageNameUrl: String = ""
     private var imageURI: Uri? = null
     private lateinit var newPost: PostStructure
@@ -49,7 +50,8 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private lateinit var cbPrice: CheckBox
     private lateinit var tilPrice: TextInputLayout
     private lateinit var etPrice: TextInputEditText
-    //private var selectedPrice: Float = 0F
+    private lateinit var tvGoToProfile: TextView
+    private var userID = ""
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,12 +70,20 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         cbPrice = findViewById(R.id.cb_price)
         tilPrice = findViewById(R.id.text_input_Layout_price)
         etPrice = findViewById(R.id.et_price)
+        tvGoToProfile = findViewById(R.id.tv_go_to_profile_from_create_post)
 
         //getTime = GetTime()
 
         showProgressDialog()
-        val userID = FireStoreClass().getUserID()
-        FireStoreClass().getUserInfoFromFireStore(this, userID)
+        FireStoreClass().getCurrentUserID { uID ->
+            if (uID.isNotEmpty()){
+                userID = uID
+                FireStoreClass().getUserInfoFromFireStore(this, userID)
+            }else{
+                hideProgressDialog()
+                showErrorSnackBar("Error Getting User ID.", true)
+            }
+        }
 
         tvSendPost.setOnClickListener(this@CreatePostActivity)
         ivPostImage.setOnClickListener(this@CreatePostActivity)
@@ -92,19 +102,35 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                 tilPrice.visibility = View.GONE
                 etPrice.visibility = View.GONE
                 etPrice.setText("")
-                //selectedPrice = 0F
             }
         }
 
         cbPrice.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked) {
-                tilPrice.visibility = VISIBLE
-                etPrice.visibility = VISIBLE
+                if (userInfo != null){
+                    if (userInfo!!.wallet.isNotEmpty()){
+                        tilPrice.visibility = VISIBLE
+                        etPrice.visibility = VISIBLE
+                        tvGoToProfile.visibility = View.GONE
+                    }else{
+                        tilPrice.visibility = View.GONE
+                        etPrice.visibility = View.GONE
+                        etPrice.setText("")
+                        tvGoToProfile.visibility = VISIBLE
+                        tvGoToProfile.setOnClickListener(this@CreatePostActivity)
+                    }
+                }else{
+                    showErrorSnackBar("Error Getting User Info.", true)
+                    tilPrice.visibility = View.GONE
+                    etPrice.visibility = View.GONE
+                    tvGoToProfile.visibility = View.GONE
+                    etPrice.setText("")
+                }
             } else {
                 tilPrice.visibility = View.GONE
                 etPrice.visibility = View.GONE
+                tvGoToProfile.visibility = View.GONE
                 etPrice.setText("")
-                //selectedPrice = 0F
             }
         }
 
@@ -113,56 +139,61 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
 
 
     private suspend fun createPost() {
-        getTimeNow()
-        if (secondsNow.isEmpty() || dateNow.isEmpty()){
-            showErrorSnackBar("Error Getting Time; Check Your Internet Connection", true)
-            hideProgressDialog()
-        }else{
-            val profilePicture = userInfo.image
-            val userId = userInfo.id
-            val userName = userInfo.userName
-            val postText = etPostText.text.toString()
-            val postImage = imageNameUrl
-            val timeCreatedMillis = secondsNow
-            val timeCreatedToShow = dateNow
-            val timeToShare = finalTimeInMillis.ifEmpty { "now" }
-            val visibility = timeToShare == "now"
-            val timeTraveler = !visibility
-            val price = etPrice.text.toString()
-            val buyerID = ""
-            if (timeTraveler){
-                if (timeToShare.toLong() <= secondsNow.toLong()){
-                    showErrorSnackBar("Please select a future date", true)
-                    hideProgressDialog()
+        if (userInfo != null){
+            getTimeNow()
+            if (secondsNow.isEmpty() || dateNow.isEmpty()){
+                showErrorSnackBar("Error Getting Time; Check Your Internet Connection", true)
+                hideProgressDialog()
+            }else{
+                val profilePicture = userInfo!!.image
+                val userId = userInfo!!.id
+                val userName = userInfo!!.userName
+                val postText = etPostText.text.toString()
+                val postImage = imageNameUrl
+                val timeCreatedMillis = secondsNow
+                val timeCreatedToShow = dateNow
+                val timeToShare = finalTimeInMillis.ifEmpty { "now" }
+                val visibility = timeToShare == "now"
+                val timeTraveler = !visibility
+                val price = etPrice.text.toString().ifEmpty { "" }
+                val buyerID = ""
+                if (timeTraveler){
+                    if (timeToShare.toLong() <= secondsNow.toLong()){
+                        showErrorSnackBar("Please select a future date", true)
+                        hideProgressDialog()
+                    }else{
+                        val postID = ""
+                        val edited = false
+                        newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
+                            timeCreatedMillis, timeCreatedToShow, timeToShare, visibility,
+                            timeTraveler, price, buyerID, postID, edited)
+                        FireStoreClass().createPostOnFireStore(this, userId, newPost)
+                    }
                 }else{
                     val postID = ""
                     val edited = false
                     newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
                         timeCreatedMillis, timeCreatedToShow, timeToShare, visibility,
                         timeTraveler, price, buyerID, postID, edited)
-                    FireStoreClass().createPostOnFireStore(this, newPost)
+                    FireStoreClass().createPostOnFireStore(this, userId, newPost)
                 }
-            }else{
-                val postID = ""
-                val edited = false
-                newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
-                    timeCreatedMillis, timeCreatedToShow, timeToShare, visibility,
-                    timeTraveler, price, buyerID, postID, edited)
-                FireStoreClass().createPostOnFireStore(this, newPost)
             }
+        }else{
+            showErrorSnackBar("Error Getting User Info.", true)
         }
     }
 
-
     fun createPostSuccessful(){
-        // updating sortedPosts
-        val sortedPosts = Constants.sortedPosts
-        sortedPosts[newPost.timeCreatedMillis] = newPost
         hideProgressDialog()
         Toast.makeText(this, "Your Post Was Sent Successfully", Toast.LENGTH_LONG).show()
         val intent = Intent(this@CreatePostActivity, FragmentActivity::class.java)
         startActivity(intent)
         finish()
+    }
+
+    fun createPostFailed(){
+        hideProgressDialog()
+        showErrorSnackBar("Error while Creating Post", true)
     }
 
     fun successGettingUserInfoFromFireStore(user: User){
@@ -172,11 +203,13 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     }
 
     private fun setUserInfo(){
-        tvUserName.text = userInfo.userName
-        if (userInfo.image.isNotEmpty()){
-            GlideLoader(this).loadImageUri(userInfo.image, ivProfilePic)
-        }else{
-            GlideLoader(this).loadImageUri(R.drawable.ic_baseline_account_circle_24, ivProfilePic)
+        if (userInfo != null){
+            tvUserName.text = userInfo!!.userName
+            if (userInfo!!.image.isNotEmpty()){
+                GlideLoader(this).loadImageUri(userInfo!!.image, ivProfilePic)
+            }else{
+                GlideLoader(this).loadImageUri(R.drawable.ic_baseline_account_circle_24, ivProfilePic)
+            }
         }
     }
 
@@ -224,6 +257,13 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                                 }
                             }
                         }
+                    }
+                }
+                R.id.tv_go_to_profile_from_create_post -> {
+                    if (tvGoToProfile.visibility == VISIBLE){
+                        val intent = Intent(this@CreatePostActivity, ProfileActivity::class.java)
+                        startActivity(intent)
+                        finish()
                     }
                 }
             }
@@ -287,19 +327,27 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             showErrorSnackBar("You Cant Use These Characters: \\[]<>#/ In Post Text.", true)
             return false
         }
-
-        if (cbPrice.isChecked && etPrice.text.toString().isEmpty()){
+        val amountOfPrice = etPrice.text.toString().trim()
+        if (cbPrice.isChecked && amountOfPrice.isEmpty()){
             showErrorSnackBar("Please Set a Price or Uncheck The Box.", true)
             return false
         }
-
-        // TODO: etPrice validation
-        val amountOfPrice = etPrice.text.toString()
-        if (amountOfPrice.isNotEmpty() && amountOfPrice.toFloat() <= 0F){
-            showErrorSnackBar("Price Must Be More Than 0", true)
-            return false
+        if (cbPrice.isChecked && amountOfPrice.isNotEmpty()){
+            if (amountOfPrice.startsWith(".") || amountOfPrice.endsWith(".")){
+                showErrorSnackBar("Invalid price format", true)
+                return false
+            }
+            try {
+                val price = BigDecimal(amountOfPrice)
+                if (price <= BigDecimal.ZERO) {
+                    showErrorSnackBar("Price must be greater than 0", true)
+                    return false
+                }
+            } catch (e: NumberFormatException) {
+                showErrorSnackBar("Invalid price format", true)
+                return false
+            }
         }
-
         return true
     }
 

@@ -392,9 +392,16 @@ class SearchActivity : BaseActivity(), OnClickListener {
         showProgressDialog()
         coroutineScope.launch {
             val deferredAllPosts = async { FireStoreClass().getPostsFromFireStore(UID) }
-            val allPosts = deferredAllPosts.await()
+            val allPostsList = deferredAllPosts.await()
+            val allPosts = ArrayList<PostStructure>()
 
-            if (allPosts.isNullOrEmpty()) {
+            if (!allPostsList.isNullOrEmpty()) {
+                for (post in allPostsList){
+                    if (post.postID.isNotEmpty() && post.buyerID.isEmpty()){
+                        allPosts.add(post)
+                    }
+                }
+            }else{
                 recyclerView.visibility = View.GONE
                 hideProgressDialog()
                 Toast.makeText(this@SearchActivity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
@@ -428,8 +435,8 @@ class SearchActivity : BaseActivity(), OnClickListener {
                     postHashMap["timeCreatedMillis"] = secondsNow
                     val updatePostJob = async {
                         val deferredCompletable = CompletableDeferred<Boolean>()
-                        FireStoreClass().updatePostOnFireStore(this@SearchActivity,
-                            postToBeUpdated.userId, postHashMap, postToBeUpdated.postID) { onComplete ->
+                        FireStoreClass().updatePostOnFireStore(postToBeUpdated.userId, postHashMap,
+                            postToBeUpdated.postID) { onComplete ->
                             deferredCompletable.complete(onComplete)
                         }
                         deferredCompletable.await()
@@ -475,7 +482,6 @@ class SearchActivity : BaseActivity(), OnClickListener {
                 i.userName = userInfo.userName
             }
             allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
-            //Log.d("final visible posts are:", "$visiblePosts")
             recyclerView.visibility = VISIBLE
             val adapter = RecyclerviewAdapter(this@SearchActivity, allPosts, currentUserID)
             adapter.notifyDataSetChanged()

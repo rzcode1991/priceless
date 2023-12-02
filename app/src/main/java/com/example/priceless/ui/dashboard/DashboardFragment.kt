@@ -114,7 +114,14 @@ class DashboardFragment : Fragment() {
             }
 
             val allPostsList = userPostsDeferred?.awaitAll()?.filterNotNull()?.flatten()
-            if (allPostsList.isNullOrEmpty()) {
+            val allPosts = ArrayList<PostStructure>()
+            if (!allPostsList.isNullOrEmpty()) {
+                for (post in allPostsList){
+                    if (post.postID.isNotEmpty() && post.buyerID.isEmpty()){
+                        allPosts.add(post)
+                    }
+                }
+            }else{
                 //hideProgressDialog()
                 if (_binding != null) {
                     Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
@@ -123,8 +130,6 @@ class DashboardFragment : Fragment() {
                 }
                 return@launch
             }
-
-            val allPosts = ArrayList(allPostsList)
 
             Log.d("---all posts are:", "${allPosts.size}")
 
@@ -167,7 +172,7 @@ class DashboardFragment : Fragment() {
 
                     val updatePostJob = async {
                         val deferredCompletable = CompletableDeferred<Boolean>()
-                        FireStoreClass().updatePostOnFireStore(requireActivity(), postToBeUpdated.userId,
+                        FireStoreClass().updatePostOnFireStore(postToBeUpdated.userId,
                             postHashMap, postToBeUpdated.postID) { onComplete ->
                             deferredCompletable.complete(onComplete)
                         }

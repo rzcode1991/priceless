@@ -104,9 +104,15 @@ class HomeFragment : Fragment() {
             val userID = deferredUserID.await()
 
             val deferredAllPosts = async { FireStoreClass().getPostsFromFireStore(userID) }
-            val allPosts = deferredAllPosts.await()
-
-            if (allPosts.isNullOrEmpty()) {
+            val allPostsList = deferredAllPosts.await()
+            val allPosts = ArrayList<PostStructure>()
+            if (!allPostsList.isNullOrEmpty()) {
+                for (post in allPostsList){
+                    if (post.postID.isNotEmpty() && post.buyerID.isEmpty()){
+                        allPosts.add(post)
+                    }
+                }
+            }else{
                 //hideProgressDialog()
                 if (_binding != null){
                     Toast.makeText(activity, "There Are No Posts To Show.", Toast.LENGTH_SHORT).show()
@@ -150,7 +156,7 @@ class HomeFragment : Fragment() {
                     postHashMap["timeCreatedMillis"] = secondsNow
                     val updatePostJob = async {
                         val deferredCompletable = CompletableDeferred<Boolean>()
-                        FireStoreClass().updatePostOnFireStore(requireActivity(), postToBeUpdated.userId,
+                        FireStoreClass().updatePostOnFireStore(postToBeUpdated.userId,
                             postHashMap, postToBeUpdated.postID) { onComplete ->
                             deferredCompletable.complete(onComplete)
                         }
@@ -265,7 +271,17 @@ class HomeFragment : Fragment() {
                 startActivity(intent)
                 true
             }
-            R.id.menu_empty -> {
+            R.id.menu_sold_posts -> {
+                val intent = Intent(activity, SoldPostsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            R.id.menu_bought_posts -> {
+                val intent = Intent(activity, BoughtPostsActivity::class.java)
+                startActivity(intent)
+                true
+            }
+            R.id.menu_exit -> {
                 activity?.finishAffinity()
                 true
             }

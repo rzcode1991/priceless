@@ -38,6 +38,7 @@ class ProfileActivity : BaseActivity(), OnClickListener {
     private var imageURI: Uri? = null
     private lateinit var toolbarProfile: Toolbar
     private lateinit var btnLogOut: Button
+    private lateinit var etWallet: TextInputEditText
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +56,7 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         btnSave = findViewById(R.id.btn_save_profile)
         toolbarProfile = findViewById(R.id.toolbar_profile)
         btnLogOut = findViewById(R.id.btn_LogOut_profile)
+        etWallet = findViewById(R.id.et_wallet_profile)
 
         showProgressDialog()
         val userID = FireStoreClass().getUserID()
@@ -81,6 +83,7 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         etEmail.isEnabled = false
         etEmail.setText(userInfo.email)
         etPhoneNumber.setText(userInfo.phoneNumber.toString())
+        etWallet.setText(userInfo.wallet)
         if (userInfo.publicProfile){
             rbPublic.isChecked = true
         }else{
@@ -268,7 +271,11 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         val userName = etUserName.text.toString().lowercase().trim { it <= ' ' }
         val firstName = etFirstName.text.toString().trim { it <= ' ' }
         val lastName = etLastName.text.toString().trim { it <= ' ' }
+        val wallet = etWallet.text.toString()
 
+        if (wallet.isNotEmpty() && wallet != userInfo.wallet){
+            userHashMap["wallet"] = wallet
+        }
         if (phoneNumber.isNotEmpty() && phoneNumber != userInfo.phoneNumber.toString()){
             userHashMap[Constants.PhoneNumber] = phoneNumber.toLong()
         }

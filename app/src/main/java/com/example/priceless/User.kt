@@ -11,6 +11,7 @@ data class User(var id: String = "",
                 var email: String = "",
                 var image: String = "",
                 var phoneNumber: Long = 0L,
+                var wallet: String = "",
                 var publicProfile: Boolean = true,
                 var profileCompleted: Int = 0
 ): Parcelable

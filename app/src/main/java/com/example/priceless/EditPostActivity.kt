@@ -157,7 +157,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                         builder.setIcon(R.drawable.ic_round_warning_24)
                         builder.setPositiveButton("Yes") { dialog, _ ->
                             showProgressDialog()
-                            FireStoreClass().deletePostOnFireStoreWithCallback(post.postID) { yep ->
+                            FireStoreClass().deletePostOnFireStoreWithCallback(post.userId, post.postID) { yep ->
                                 if (yep){
                                     deletePostOnFireStoreSuccess()
                                 }else{
@@ -291,7 +291,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             //postHashMap["timeCreatedToShow"] = newTimeCreatedToShow
             postHashMap["edited"] = true
             val userID = post.userId
-            FireStoreClass().updatePostOnFireStore(this@EditPostActivity, userID, postHashMap,
+            FireStoreClass().updatePostOnFireStore(userID, postHashMap,
                 postID) { onComplete ->
                 if (onComplete){
                     updatePostOnFireStoreSuccess()
@@ -327,7 +327,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         // assuming that only visible posts are editable
         newPost = PostStructure(post.profilePicture, post.userId, post.userName, newPostText,
             newPostImage, newTimeCreatedMillis, newTimeCreatedToShow, "now",
-            true, false, "", "", post.postID, true)
+            true, false, post.price, "", post.postID, true)
         sortedPosts[newTimeCreatedMillis] = newPost
         hideProgressDialog()
         Toast.makeText(this, "Post Updated Successfully", Toast.LENGTH_LONG).show()
