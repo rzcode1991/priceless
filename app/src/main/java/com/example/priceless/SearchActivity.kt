@@ -375,7 +375,8 @@ class SearchActivity : BaseActivity(), OnClickListener {
 
     private fun createNewFollowRequest(){
         val receiverUserID = userID
-        val followRequest = FollowRequest(currentUserID, receiverUserID, false)
+        val followRequest = FollowRequest(currentUserID, "", "",
+            receiverUserID, false)
         showProgressDialog()
         FireStoreClass().createFollowRequest(this, followRequest)
     }

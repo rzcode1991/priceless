@@ -176,6 +176,35 @@ class FireStoreClass {
         }
     }
 
+    fun getReceivedRequestsRealTime(userID: String, callback: (ArrayList<FollowRequest>?) -> Unit) {
+        val requests = ArrayList<FollowRequest>()
+        val requestRef = mFireStore.collection(Constants.USERS)
+            .document(userID)
+            .collection("receivedRequests")
+
+        requestRef.addSnapshotListener { snapshot, e ->
+            if (e != null) {
+                Log.e("error getReceivedRequestsRealTime", e.message.toString(), e)
+                callback(null)
+                return@addSnapshotListener
+            }
+            if (snapshot != null && !snapshot.isEmpty) {
+                for (document in snapshot.documents) {
+                    val request = document.toObject(FollowRequest::class.java)
+                    Log.d("-----request is:", request.toString())
+                    if (request != null) {
+                        requests.add(request)
+                    }
+                }
+                Log.d("-----", "Adding ${requests.size} requests to callback.")
+                callback(requests)
+                // Clear the requests list to ensure only new data is added next time
+                requests.clear()
+            } else {
+                callback(null)
+            }
+        }
+    }
 
 
     fun getReceivedRequests(userID: String, callback: (ArrayList<FollowRequest>?) -> Unit){
