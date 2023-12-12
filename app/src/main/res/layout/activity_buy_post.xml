@@ -33,7 +33,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="start">
+                    android:gravity="start"
+                    tools:ignore="UseCompoundDrawables">
 
                     <ImageView
                         android:id="@+id/iv_profile_pic_buy"
@@ -41,7 +42,8 @@
                         android:layout_height="50dp"
                         android:layout_margin="4dp"
                         android:layout_gravity="start|top"
-                        android:src="@drawable/ic_baseline_account_circle_24"/>
+                        android:src="@drawable/ic_baseline_account_circle_24"
+                        tools:ignore="ContentDescription" />
 
                     <TextView
                         android:id="@+id/tv_user_name_buy"
@@ -92,7 +94,8 @@
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:textSize="12sp"
-                    android:textColor="#5E5A5A"/>
+                    android:textColor="#5E5A5A"
+                    tools:ignore="HardcodedText" />
 
             </LinearLayout>
 
@@ -147,7 +150,8 @@
                 android:layout_marginTop="5dp"
                 android:layout_marginBottom="5dp"
                 android:gravity="center"
-                android:layout_gravity="center"/>
+                android:layout_gravity="center"
+                tools:ignore="HardcodedText" />
 
             <Button
                 android:id="@+id/btn_confirm_transaction_buy"
@@ -159,7 +163,8 @@
                 android:text="Confirm Transaction"
                 android:layout_gravity="center"
                 android:textColor="@color/black"
-                android:textAllCaps="false"/>
+                android:textAllCaps="false"
+                tools:ignore="HardcodedText" />
 
         </LinearLayout>
 
@@ -173,7 +178,8 @@
             android:textSize="14sp"
             android:gravity="center"
             android:layout_gravity="center"
-            android:layout_margin="20dp" />
+            android:layout_margin="20dp"
+            tools:ignore="HardcodedText" />
 
         <TextView
             android:id="@+id/tv_post_not_exist_buy"
@@ -185,7 +191,8 @@
             android:textSize="14sp"
             android:gravity="center"
             android:layout_gravity="center"
-            android:layout_margin="20dp"/>
+            android:layout_margin="20dp"
+            tools:ignore="HardcodedText" />
 
         <ProgressBar
             android:id="@+id/pb_check_transaction"

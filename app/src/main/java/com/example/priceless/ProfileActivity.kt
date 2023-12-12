@@ -4,14 +4,11 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
-import android.util.TypedValue
 import android.view.View
 import android.view.View.OnClickListener
-import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
@@ -21,6 +18,7 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.io.IOException
 
+@Suppress("DEPRECATION")
 class ProfileActivity : BaseActivity(), OnClickListener {
 
     private lateinit var ivImageProfile: ImageView
@@ -142,6 +140,7 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK){
@@ -181,11 +180,11 @@ class ProfileActivity : BaseActivity(), OnClickListener {
         val firstName = etFirstName.text.toString().trim { it <= ' ' }
         val lastName = etLastName.text.toString().trim { it <= ' ' }
         val phoneNumber = etPhoneNumber.text.toString().trim { it <= ' ' }
-        val reservedUsernames = listOf("admin", "priceless", "root", "moderator", "support", "official",
+        val reservedUsernames = listOf("admin", "root", "moderator", "support", "official",
             "anonymous", "system", "bot", "test", "report", "feedback", "contact", "help", "terms",
             "privacy", "security", "register", "login", "logout", "signup", "settings", "profile",
             "account", "user", "users", "blocked", "banned", "spam", "feedback", "master", "invalid",
-            "invalidusername", "unavailable", "service", "error", "server", "blockeduser", "guest")
+            "unavailable", "service", "error", "server", "guest")
         val allowedRegexForUserName = Regex("^[a-z0-9_-]*$")
         val allowedRegexForName = Regex("^[a-zA-Z0-9_-]*$")
         when{

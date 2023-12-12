@@ -15,16 +15,18 @@ import android.view.View.VISIBLE
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.math.BigDecimal
 import java.text.ParseException
 import java.text.SimpleDateFormat
 import java.util.*
 
+@Suppress("DEPRECATION")
 class CreatePostActivity : BaseActivity(), OnClickListener {
 
     private lateinit var cbSendToFuture: CheckBox
@@ -43,8 +45,6 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     private var formattedDateTime: String = ""
     private var dateNow: String = ""
     private var secondsNow: String = ""
-    private var getTime: GetTime? = null
-    private lateinit var dateAndTimePair: Pair<String, String>
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
     private lateinit var layoutPrice: LinearLayout
     private lateinit var cbPrice: CheckBox
@@ -162,7 +162,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                         showErrorSnackBar("Please select a future date", true)
                         hideProgressDialog()
                     }else{
-                        val postID = ""
+                        val postID = System.currentTimeMillis().toString()
                         val edited = false
                         newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
                             timeCreatedMillis, timeCreatedToShow, timeToShare, visibility,
@@ -170,7 +170,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                         FireStoreClass().createPostOnFireStore(this, userId, newPost)
                     }
                 }else{
-                    val postID = ""
+                    val postID = System.currentTimeMillis().toString()
                     val edited = false
                     newPost = PostStructure(profilePicture, userId, userName, postText, postImage,
                         timeCreatedMillis, timeCreatedToShow, timeToShare, visibility,
@@ -285,6 +285,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK){
@@ -418,7 +419,6 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                     //
                     selectedDate.set(Calendar.HOUR_OF_DAY, hour)
                     selectedDate.set(Calendar.MINUTE, minute)
-                    Log.d("compare", "${selectedDate.timeInMillis/1000} is it < ${secondsNow.toLong()}")
                     if (selectedDate.timeInMillis/1000+20 < secondsNow.toLong()) {
                         showErrorSnackBar("Please select a future date", true)
                     } else {
@@ -446,7 +446,6 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                 selectedDate.set(Calendar.MINUTE, selectedMinute)
 
                 val combinedTimeInMillis = selectedDate.timeInMillis/1000
-                Log.d("finalCombinedTimeMillis", "$combinedTimeInMillis")
 
                 if (combinedTimeInMillis <= secondsNow.toLong()) {
                     showErrorSnackBar("Please select a future date", true)

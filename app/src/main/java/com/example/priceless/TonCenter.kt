@@ -1,9 +1,9 @@
 package com.example.priceless
 
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.*
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.json.JSONObject
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -32,7 +32,6 @@ class TonCenter {
                         Result.failure(Exception("${response.code} ${response.message}"))
                     }
                 } else {
-                    Log.e("-----Error response from tonCenter:", "${response.code} ${response.message}")
                     Result.failure(Exception("${response.code} ${response.message}"))
                 }
             } catch (e: IOException) {

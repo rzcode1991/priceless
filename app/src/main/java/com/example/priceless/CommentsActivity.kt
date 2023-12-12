@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
+@Suppress("DEPRECATION")
 class CommentsActivity : BaseActivity(), OnClickListener {
 
     private lateinit var post: PostStructure
@@ -279,7 +280,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     val writerProfilePic = ""
                     val isPrivate = cbPrivateComment.isChecked
                     val edited = false
-                    val commentID = ""
+                    val commentID = System.currentTimeMillis().toString()
                     val newComment = CommentStructure(text, commentPhoto, timeCreated, timeCreatedToShow,
                         postID, topCommentIDForReply, writerOfTopCommentUID, postOwnerUID, writerUID,
                         writerUserName, writerProfilePic, isPrivate, edited, commentID)
@@ -295,6 +296,10 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                                 ibRemoveCommentPhoto.visibility = View.GONE
                                 showErrorSnackBar("New Comment Added Successfully.", false)
                                 hideProgressDialog()
+                                if (currentUserID != post.userId){
+                                    FireStoreClass().saveAwayCommentsInfo(currentUserID, commentID,
+                                        true, postID, postOwnerUID)
+                                }
                             }else{
                                 showErrorSnackBar("Error Adding New Comment.", true)
                                 hideProgressDialog()
@@ -312,6 +317,10 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                                 ibRemoveCommentPhoto.visibility = View.GONE
                                 showErrorSnackBar("New Comment Added Successfully.", false)
                                 hideProgressDialog()
+                                if (currentUserID != post.userId){
+                                    FireStoreClass().saveAwayCommentsInfo(currentUserID, commentID,
+                                        false, postID, postOwnerUID)
+                                }
                             }else{
                                 showErrorSnackBar("Error Adding New Comment.", true)
                                 hideProgressDialog()
@@ -429,8 +438,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                 commentsToShow.sortByDescending { it.timeCreated.toLong() }
                 progressBar.visibility = View.GONE
                 rvComments.visibility = VISIBLE
-                val adapter = CommentsRvAdapter(this@CommentsActivity, commentsToShow,
-                    currentUserID)
+                val adapter = CommentsRvAdapter(this@CommentsActivity, commentsToShow)
                 adapter.notifyDataSetChanged()
                 val layOutManager = LinearLayoutManager(this@CommentsActivity)
                 rvComments.layoutManager = layOutManager
@@ -470,6 +478,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK){
@@ -495,7 +504,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                 if (data != null) {
                     try {
                         imageURIForRecyclerView = data.data!!
-                        Log.d("image URI for RecyclerView is:", "$imageURIForRecyclerView")
+                        //Log.d("image URI for RecyclerView is:", "$imageURIForRecyclerView")
                     } catch (e: IOException) {
                         e.printStackTrace()
                         Toast.makeText(this, "image selection For RecyclerView failed", Toast.LENGTH_SHORT).show()
@@ -509,6 +518,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    /*
     fun returnImageURIForRecyclerView(): Uri?{
         return imageURIForRecyclerView
     }
@@ -516,6 +526,8 @@ class CommentsActivity : BaseActivity(), OnClickListener {
     fun setImageUriForRvToNull(){
         imageURIForRecyclerView = null
     }
+
+     */
 
     private fun validateUserInput(): Boolean {
         val commentText = etNewComment.text.toString()

@@ -14,9 +14,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.priceless.*
 import com.example.priceless.databinding.FragmentDashboardBinding
 import kotlinx.coroutines.*
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.async
 
 
 class DashboardFragment : Fragment() {
@@ -25,7 +22,6 @@ class DashboardFragment : Fragment() {
     private lateinit var dashViewModel: DashboardViewModel
     private var dateNow: String = ""
     private var secondsNow: String = ""
-    private var dateAndTimePair = Pair("", "")
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var progressDialog: Dialog
     private var lastRequestTimeMillis: Long = 0L
@@ -41,9 +37,6 @@ class DashboardFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
 
-        Log.d("---onCreateView timeline called", "")
-        //val dashboardViewModel = ViewModelProvider(this).get(DashboardViewModel::class.java)
-
         coroutineScope = CoroutineScope(Dispatchers.Main)
 
         _binding = FragmentDashboardBinding.inflate(inflater, container, false)
@@ -58,7 +51,6 @@ class DashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.d("---onViewCreated timeline called", "")
         dashViewModel = ViewModelProvider(requireActivity()).get(DashboardViewModel::class.java)
 
         binding.ibSearchTimeline.setOnClickListener {
@@ -76,7 +68,7 @@ class DashboardFragment : Fragment() {
             if (currentUID.isNotEmpty()){
                 dashViewModel.posts.observe(viewLifecycleOwner) { posts ->
                     binding.pbFragmentDashboard.visibility = View.GONE
-                    val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts), currentUID)
+                    val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts))
                     adapter.notifyDataSetChanged()
                     val layoutManager = LinearLayoutManager(requireContext())
                     binding.recyclerViewTimeline.layoutManager = layoutManager
@@ -131,11 +123,7 @@ class DashboardFragment : Fragment() {
                 return@launch
             }
 
-            Log.d("---all posts are:", "${allPosts.size}")
-
             val visiblePosts = ArrayList(allPosts.filter { it.visibility })
-
-            Log.d("---timeline visible posts at beginning are:", "${visiblePosts.size}")
 
             val postsToUpdate = mutableListOf<PostStructure>()
 
@@ -144,13 +132,11 @@ class DashboardFragment : Fragment() {
                 val timeJob = async { getTimeNow() }
                 timeJob.await()
             }
-            Log.d("---getTimeCalled timeline", "date: $dateNow sec: $secondsNow")
             if (dateNow.isNotEmpty() && secondsNow.isNotEmpty()) {
                 for (post in allPosts){
                     if (!post.visibility){
                         if (secondsNow.toLong() >= post.timeToShare.toLong()) {
                             postsToUpdate.add(post)
-                            Log.d("---timeline posts to update are:", "${postsToUpdate.size}")
                         }
                     }
                 }
@@ -165,7 +151,6 @@ class DashboardFragment : Fragment() {
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
                     val postToBeUpdated = postsToUpdate[0]
-                    Log.d("---timeline 1 post t b updated is:", "$postToBeUpdated")
                     val postHashMap = HashMap<String, Any>()
                     postHashMap["visibility"] = true
                     postHashMap["timeCreatedMillis"] = secondsNow
@@ -183,14 +168,12 @@ class DashboardFragment : Fragment() {
                         postToBeUpdated.visibility = true
                         postToBeUpdated.timeCreatedMillis = secondsNow
                         visiblePosts.add(postToBeUpdated)
-                        Log.d("---timeline visible posts after adding 1 post for update:", "${visiblePosts.size}")
                     }else{
                         if (_binding != null){
                             Toast.makeText(context, "err during update a post.", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }else{
-                    Log.d("---timeline multiple posts to b updated is:", "${postsToUpdate.size}")
                     val postsByUser: Map<String, List<PostStructure>> = postsToUpdate.groupBy { it.userId }
                     val userUpdates = mutableMapOf<String, List<Map<String, Any>>>()
                     for ((userId, posts) in postsByUser) {
@@ -214,7 +197,6 @@ class DashboardFragment : Fragment() {
                             i.visibility = true
                         }
                         visiblePosts.addAll(postsToUpdate)
-                        Log.d("---timeline visible posts after adding multiple posts for update:", "${visiblePosts.size}")
                     } else {
                         if (_binding != null){
                             Toast.makeText(context, "err during batch update posts.", Toast.LENGTH_SHORT).show()
@@ -231,7 +213,6 @@ class DashboardFragment : Fragment() {
                     }
                     val userInfo = deferredUserInfo.await()
                     if (userInfo != null) {
-                        Log.d("---user info is:", "$userInfo")
                         groupPosts.forEach { postItem ->
                             postItem.profilePicture = userInfo.image
                             postItem.userName = userInfo.userName
@@ -240,7 +221,6 @@ class DashboardFragment : Fragment() {
                 }
             }
             userInfoJobs.awaitAll()
-            //Log.d("---all final visible posts are:", "${visiblePosts.size}")
             if (allPosts.isNotEmpty()){
                 allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
                 if (_binding != null){
@@ -280,6 +260,7 @@ class DashboardFragment : Fragment() {
 
 
 
+    /*
     private fun showProgressDialog(){
         //progressDialog = Dialog(requireActivity())
         progressDialog.setContentView(R.layout.progress_dialog)
@@ -292,10 +273,11 @@ class DashboardFragment : Fragment() {
         progressDialog.dismiss()
     }
 
+     */
+
 
     override fun onDestroyView() {
         super.onDestroyView()
-        Log.d("---onDestroyView timeline called", "")
         _binding = null
         coroutineScope.cancel()
     }
@@ -303,14 +285,12 @@ class DashboardFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        Log.d("---onPause timeline called", "")
         coroutineScope.cancel()
     }
 
 
     override fun onResume() {
         super.onResume()
-        Log.d("---onResume timeline called", "")
         coroutineScope = CoroutineScope(Dispatchers.Main)
         loadPosts()
     }

@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.*
 
+@Suppress("DEPRECATION")
 class SearchActivity : BaseActivity(), OnClickListener {
 
     private lateinit var toolbarSearch: Toolbar
@@ -31,12 +32,9 @@ class SearchActivity : BaseActivity(), OnClickListener {
     private var userID: String = ""
     private lateinit var userInfo: User
     private lateinit var coroutineScope: CoroutineScope
-    private var getTime: GetTime? = null
-    private lateinit var dateAndTimePair: Pair<String, String>
     private var dateNow: String = ""
     private var secondsNow: String = ""
     private lateinit var currentUserID: String
-    private var followSituation = ""
     private lateinit var layoutOtherUser: LinearLayout
     private lateinit var tvOtherUserFollowsYou: TextView
     private lateinit var btnStopOtherUser: Button
@@ -409,9 +407,7 @@ class SearchActivity : BaseActivity(), OnClickListener {
                 return@launch
             }
 
-            Log.d("--- all posts beginning:", "${allPosts.size}")
             val visiblePosts = ArrayList(allPosts.filter { it.visibility })
-            Log.d("--- already visible posts beginning:", "${visiblePosts.size}")
             val postsToUpdate = mutableListOf<PostStructure>()
             val timeJob = async { getTimeNow() }
             timeJob.await()
@@ -420,7 +416,6 @@ class SearchActivity : BaseActivity(), OnClickListener {
                     if (!post.visibility){
                         if (secondsNow.toLong() >= post.timeToShare.toLong()) {
                             postsToUpdate.add(post)
-                            Log.d("--- posts to update are:", "${postsToUpdate.size}")
                         }
                     }
                 }
@@ -430,7 +425,6 @@ class SearchActivity : BaseActivity(), OnClickListener {
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
                     val postToBeUpdated = postsToUpdate[0]
-                    Log.d("--- 1 post t b updated is:", "$postToBeUpdated")
                     val postHashMap = HashMap<String, Any>()
                     postHashMap["visibility"] = true
                     postHashMap["timeCreatedMillis"] = secondsNow
@@ -447,12 +441,10 @@ class SearchActivity : BaseActivity(), OnClickListener {
                         postToBeUpdated.visibility = true
                         postToBeUpdated.timeCreatedMillis = secondsNow
                         visiblePosts.add(postToBeUpdated)
-                        Log.d("--- visible posts after adding 1 post for update:", "${visiblePosts.size}")
                     }else{
                         Toast.makeText(this@SearchActivity, "err during update a post.", Toast.LENGTH_SHORT).show()
                     }
                 }else{
-                    Log.d("--- multiple posts to be updated are:", "${postsToUpdate.size}")
                     val batchUpdates = mutableMapOf<String, Map<String, Any>>()
                     for (eachPost in postsToUpdate) {
                         val postHashMap = HashMap<String, Any>()
@@ -471,20 +463,18 @@ class SearchActivity : BaseActivity(), OnClickListener {
                     }
                     if (batchUpdateJob.await()) {
                         visiblePosts.addAll(postsToUpdate)
-                        Log.d("--- visible posts after adding multiple posts for update:", "${visiblePosts.size}")
                     } else {
                         Toast.makeText(this@SearchActivity, "err during batch update posts.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
-            Log.d("user is:", "$userInfo")
             for (i in allPosts){
                 i.profilePicture = userInfo.image
                 i.userName = userInfo.userName
             }
             allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
             recyclerView.visibility = VISIBLE
-            val adapter = RecyclerviewAdapter(this@SearchActivity, allPosts, currentUserID)
+            val adapter = RecyclerviewAdapter(this@SearchActivity, allPosts)
             adapter.notifyDataSetChanged()
             val layoutManager = LinearLayoutManager(this@SearchActivity)
             recyclerView.layoutManager = layoutManager

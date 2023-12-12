@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,7 +12,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="start"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="8dp"
+        tools:ignore="UseCompoundDrawables">
 
         <ImageView
             android:id="@+id/iv_profile_pic_edit_post"
@@ -21,7 +21,8 @@
             android:layout_height="40dp"
             android:layout_gravity="center"
             android:layout_marginEnd="8dp"
-            android:src="@drawable/ic_baseline_account_circle_24"/>
+            android:src="@drawable/ic_baseline_account_circle_24"
+            tools:ignore="ContentDescription" />
 
         <TextView
             android:id="@+id/tv_user_name_edit_post"
@@ -30,7 +31,8 @@
             android:text="userName"
             android:textSize="15sp"
             android:textColor="@color/black"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center"
+            tools:ignore="HardcodedText" />
 
     </LinearLayout>
 
@@ -54,7 +56,8 @@
                         android:layout_width="0dp"
                         android:layout_weight="2"
                         android:layout_height="wrap_content"
-                        android:minHeight="150dp">
+                        android:minHeight="150dp"
+                        tools:ignore="NestedScrolling">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_post_text_edit_post"
@@ -67,7 +70,8 @@
                             android:textColor="#2b2d42"
                             android:inputType="textMultiLine"
                             android:hint="text"
-                            android:background="@drawable/main_edit_text_bg"/>
+                            android:background="@drawable/main_edit_text_bg"
+                            tools:ignore="HardcodedText" />
 
                     </ScrollView>
 
@@ -77,7 +81,8 @@
                         android:layout_weight="1"
                         android:layout_height="120dp"
                         android:layout_marginStart="8dp"
-                        android:src="@drawable/ic_baseline_image_24"/>
+                        android:src="@drawable/ic_baseline_image_24"
+                        tools:ignore="ContentDescription" />
 
                 </LinearLayout>
 
@@ -89,7 +94,8 @@
                     android:layout_gravity="start"
                     android:layout_marginTop="8dp"
                     android:textSize="12sp"
-                    android:textColor="#5E5A5A"/>
+                    android:textColor="#5E5A5A"
+                    tools:ignore="HardcodedText" />
 
                 <Button
                     android:id="@+id/btn_edit_and_update_post"
@@ -103,7 +109,8 @@
                     android:text="Edit Post"
                     android:visibility="visible"
                     android:textColor="@color/black"
-                    android:textAllCaps="false"/>
+                    android:textAllCaps="false"
+                    tools:ignore="HardcodedText" />
 
                 <Button
                     android:id="@+id/btn_cancel_editing_post"
@@ -117,7 +124,8 @@
                     android:text="Cancel"
                     android:visibility="visible"
                     android:textColor="@color/black"
-                    android:textAllCaps="false"/>
+                    android:textAllCaps="false"
+                    tools:ignore="HardcodedText" />
 
                 <Button
                     android:id="@+id/btn_delete_post"
@@ -131,7 +139,8 @@
                     android:text="Delete Post"
                     android:textColor="@color/red"
                     android:visibility="gone"
-                    android:textAllCaps="false"/>
+                    android:textAllCaps="false"
+                    tools:ignore="HardcodedText" />
 
             </LinearLayout>
 

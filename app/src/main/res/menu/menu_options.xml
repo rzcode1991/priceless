@@ -1,21 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<menu xmlns:tools="http://schemas.android.com/tools"
+    xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_profile"
         android:icon="@drawable/ic_baseline_account_circle_24"
-        android:title="Profile" />
+        android:title="Profile"
+        tools:ignore="HardcodedText" />
 
     <item
         android:id="@+id/menu_sold_posts"
-        android:title="Sold Posts" />
+        android:title="Sold Posts"
+        tools:ignore="HardcodedText" />
 
     <item
         android:id="@+id/menu_bought_posts"
-        android:title="Bought Posts" />
+        android:title="Bought Posts"
+        tools:ignore="HardcodedText" />
 
     <item
         android:id="@+id/menu_exit"
-        android:title="Exit" />
+        android:title="Exit"
+        tools:ignore="HardcodedText" />
 
 </menu>

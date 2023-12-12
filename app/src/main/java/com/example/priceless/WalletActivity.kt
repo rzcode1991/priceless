@@ -1,7 +1,5 @@
 package com.example.priceless
 
-import android.content.res.Resources
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.view.View.OnClickListener
@@ -9,12 +7,10 @@ import android.view.View.VISIBLE
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
-import java.math.BigDecimal
 
 class WalletActivity : BaseActivity(), OnClickListener {
 
@@ -29,7 +25,6 @@ class WalletActivity : BaseActivity(), OnClickListener {
     private var isDeposit: Boolean = false
     private var isWithdraw: Boolean = false
     private var currentUserID = ""
-    private lateinit var user: User
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,6 +136,7 @@ class WalletActivity : BaseActivity(), OnClickListener {
         ViewCompat.setBackgroundTintList(button, ContextCompat.getColorStateList(this, color))
     }
 
+    /*
     private fun validateBeforeDeposit(): Boolean{
         val amountOfDeposit = etAmount.text.toString().trim()
         if (amountOfDeposit.isNotEmpty()){
@@ -164,6 +160,8 @@ class WalletActivity : BaseActivity(), OnClickListener {
         }
         return true
     }
+     */
+
 
     /*
     private fun validateBeforeWithdraw(): Boolean{

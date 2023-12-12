@@ -5,7 +5,6 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -13,13 +12,12 @@ import android.view.View.OnClickListener
 import android.view.View.VISIBLE
 import android.widget.*
 import androidx.cardview.widget.CardView
-import com.bumptech.glide.Glide
 import kotlinx.coroutines.*
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.HashMap
 
+@Suppress("DEPRECATION")
 class BuyPostActivity : BaseActivity(), OnClickListener {
 
     private lateinit var cvPostInfo: CardView
@@ -93,7 +91,7 @@ class BuyPostActivity : BaseActivity(), OnClickListener {
     private fun getPostInfo(){
         fireStoreClass = FireStoreClass()
         fireStoreClass?.listenForSinglePostChanges(postOwnerID, postID) { postInfo ->
-            if (postInfo != null){
+            if (postInfo != null && postInfo.buyerID.isEmpty()){
                 post = postInfo
                 cvPostInfo.visibility = VISIBLE
                 setPostInfo()
@@ -232,7 +230,6 @@ class BuyPostActivity : BaseActivity(), OnClickListener {
 
     private fun transactionOK(){
         if (post != null){
-            post!!.postID = post!!.timeCreatedMillis
             post!!.buyerID = currentUserID
 
             val postHashMap = HashMap<String, Any>()
@@ -303,8 +300,6 @@ class BuyPostActivity : BaseActivity(), OnClickListener {
 
     private suspend fun getTransaction(){
         val result = TonCenter().makeHttpRequest(currentUser!!.wallet)
-        Log.d("----result from tonCenter:", result.toString())
-
         if (result.isSuccess) {
             val transaction = result.getOrNull()
             if (transaction != null) {
@@ -312,10 +307,6 @@ class BuyPostActivity : BaseActivity(), OnClickListener {
                 transactionDestination = transaction.destination
                 transactionValue = transaction.value
                 transactionHash = transaction.bodyHash
-                Log.d("---transactionSource", transactionSource)
-                Log.d("---transactionDestination", transactionDestination)
-                Log.d("---transactionValue", transactionValue)
-                Log.d("---transactionHash", transactionHash)
             }
         } else {
             val exception = result.exceptionOrNull()

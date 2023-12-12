@@ -9,13 +9,10 @@ import java.util.*
 
 object Constants {
     const val USERS: String = "users"
-    const val priceless_PREFERENCES : String = "priceless_Preferences"
-    const val LOGGEDInUSER: String = "LoggedIn_User"
     const val User_Extra_Details: String = "User_Extra_Details"
     const val PermissionExternalStorageCode = 2
     const val ImageIntentCode = 4
     const val PhoneNumber = "phoneNumber"
-    const val User_Profile_Image = "User_Profile_Image"
     const val Image = "image"
     const val ProfileCompleted = "profileCompleted"
     const val FirstName = "firstName"

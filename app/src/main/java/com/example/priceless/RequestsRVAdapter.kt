@@ -3,7 +3,6 @@ package com.example.priceless
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -102,7 +101,7 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
 
     class RequestViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val cardView: CardView = itemView.findViewById(R.id.card_view_request_item)
-        val layoutUserInfo: LinearLayout = itemView.findViewById(R.id.layout_user_info)
+        //val layoutUserInfo: LinearLayout = itemView.findViewById(R.id.layout_user_info)
         val profilePic: ImageView = itemView.findViewById(R.id.iv_profile_pic_request)
         val tvRequest: TextView = itemView.findViewById(R.id.tv_request)
         val layOutActionRequest: LinearLayout = itemView.findViewById(R.id.layout_action_request)

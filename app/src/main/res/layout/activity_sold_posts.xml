@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -22,7 +20,8 @@
             android:layout_marginEnd="20dp"
             android:layout_marginTop="5dp"
             android:layout_marginBottom="5dp"
-            android:visibility="visible">
+            android:visibility="visible"
+            tools:ignore="UseCompoundDrawables">
 
             <ImageView
                 android:id="@+id/iv_profile_pic_sold_posts"
@@ -30,7 +29,8 @@
                 android:layout_height="50dp"
                 android:layout_marginEnd="5dp"
                 android:layout_gravity="start|center"
-                android:src="@drawable/ic_baseline_account_circle_24"/>
+                android:src="@drawable/ic_baseline_account_circle_24"
+                tools:ignore="ContentDescription" />
 
             <TextView
                 android:id="@+id/tv_username_sold_posts"
@@ -41,7 +41,8 @@
                 android:layout_marginStart="5dp"
                 android:text="UserName"
                 android:textSize="15sp"
-                android:textColor="@color/colorPrimaryDark"/>
+                android:textColor="@color/colorPrimaryDark"
+                tools:ignore="HardcodedText" />
 
         </LinearLayout>
 
@@ -52,7 +53,8 @@
             android:textSize="18sp"
             android:textColor="@color/colorPrimaryText"
             android:layout_gravity="center"
-            android:layout_margin="20dp"/>
+            android:layout_margin="20dp"
+            tools:ignore="HardcodedText" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view_sold_posts"

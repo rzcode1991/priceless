@@ -5,13 +5,13 @@ import android.os.Handler
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.example.priceless.R
 import com.google.android.material.snackbar.Snackbar
 
+@Suppress("DEPRECATION")
 open class BaseActivity : AppCompatActivity() {
 
     private var backButtonPressedOnce = false
-    private lateinit var progressDialog: Dialog
+    private var progressDialog: Dialog? = null
 
     fun showErrorSnackBar(message: String, errorMessage: Boolean){
         val snackBar = Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_LONG)
@@ -24,16 +24,26 @@ open class BaseActivity : AppCompatActivity() {
         snackBar.show()
     }
 
-    fun showProgressDialog(){
-        progressDialog = Dialog(this)
-        progressDialog.setContentView(R.layout.progress_dialog)
-        progressDialog.setCancelable(false)
-        progressDialog.setCanceledOnTouchOutside(false)
-        progressDialog.show()
+    fun showProgressDialog() {
+        if (progressDialog == null || !progressDialog!!.isShowing) {
+            progressDialog = Dialog(this)
+            progressDialog!!.setContentView(R.layout.progress_dialog)
+            progressDialog!!.setCancelable(false)
+            progressDialog!!.setCanceledOnTouchOutside(false)
+            progressDialog!!.show()
+        }
     }
 
-    fun hideProgressDialog(){
-        progressDialog.dismiss()
+    fun hideProgressDialog() {
+        progressDialog?.let {
+            if (it.isShowing) {
+                try {
+                    it.dismiss()
+                } catch (e: IllegalArgumentException) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     fun doublePressBackButtonToExit(){

@@ -4,7 +4,6 @@ import android.content.Context
 import android.widget.ImageView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.example.priceless.R
 import java.io.IOException
 
 class GlideLoader(val context: Context){

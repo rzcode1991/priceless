@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -13,7 +12,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="start"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="8dp"
+        tools:ignore="UseCompoundDrawables">
 
         <ImageView
             android:id="@+id/iv_profile_pic_create_post"
@@ -21,7 +21,8 @@
             android:layout_height="40dp"
             android:layout_gravity="center"
             android:layout_marginEnd="8dp"
-            android:src="@drawable/ic_baseline_account_circle_24"/>
+            android:src="@drawable/ic_baseline_account_circle_24"
+            tools:ignore="ContentDescription" />
 
         <TextView
             android:id="@+id/tv_user_name_create_post"
@@ -30,7 +31,8 @@
             android:text="userName"
             android:textSize="15sp"
             android:textColor="@color/black"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center"
+            tools:ignore="HardcodedText" />
 
     </LinearLayout>
 
@@ -59,7 +61,8 @@
                         android:layout_width="0dp"
                         android:layout_weight="2"
                         android:layout_height="wrap_content"
-                        android:minHeight="150dp">
+                        android:minHeight="150dp"
+                        tools:ignore="NestedScrolling">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/et_main_post_text_create_post"
@@ -72,7 +75,8 @@
                             android:textColor="#2b2d42"
                             android:inputType="textMultiLine"
                             android:hint="text"
-                            android:background="@drawable/main_edit_text_bg"/>
+                            android:background="@drawable/main_edit_text_bg"
+                            tools:ignore="HardcodedText" />
 
                     </ScrollView>
 
@@ -82,7 +86,8 @@
                             android:layout_weight="1"
                             android:layout_height="120dp"
                             android:layout_marginStart="8dp"
-                            android:src="@drawable/ic_baseline_image_24"/>
+                            android:src="@drawable/ic_baseline_image_24"
+                            tools:ignore="ContentDescription" />
 
                 </LinearLayout>
 
@@ -104,7 +109,8 @@
                         android:layout_height="wrap_content"
                         android:text="Send It to the Future?"
                         android:textSize="25sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        tools:ignore="HardcodedText" />
 
                 </LinearLayout>
 
@@ -120,7 +126,8 @@
                     android:text="select date"
                     android:visibility="gone"
                     android:textColor="@color/black"
-                    android:textAllCaps="false"/>
+                    android:textAllCaps="false"
+                    tools:ignore="HardcodedText" />
 
                 <TextView
                     android:id="@+id/tv_selected_date"
@@ -131,7 +138,8 @@
                     android:textColor="@color/black"
                     android:textSize="20sp"
                     android:layout_gravity="center"
-                    android:layout_marginBottom="20dp"/>
+                    android:layout_marginBottom="20dp"
+                    tools:ignore="HardcodedText" />
 
                 <LinearLayout
                     android:id="@+id/layout_price"
@@ -154,7 +162,8 @@
                         android:layout_height="wrap_content"
                         android:text="Set a Price?"
                         android:textSize="25sp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        tools:ignore="HardcodedText" />
 
                 </LinearLayout>
 
@@ -167,7 +176,8 @@
                     android:layout_gravity="center"
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="20dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    tools:ignore="HardcodedText">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_price"
@@ -193,7 +203,8 @@
                     android:layout_marginTop="10dp"
                     android:layout_marginBottom="20dp"
                     android:layout_marginStart="20dp"
-                    android:layout_marginEnd="20dp"/>
+                    android:layout_marginEnd="20dp"
+                    tools:ignore="HardcodedText" />
 
             </LinearLayout>
 
@@ -209,7 +220,8 @@
             android:textColor="@color/black"
             android:textSize="18sp"
             android:background="@drawable/send_button_background"
-            android:gravity="center"/>
+            android:gravity="center"
+            tools:ignore="HardcodedText" />
 
     </FrameLayout>
 

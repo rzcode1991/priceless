@@ -2,16 +2,17 @@ package com.example.priceless
 
 import android.os.Bundle
 import android.text.TextUtils
-import android.util.Log
-import android.widget.*
-import androidx.appcompat.app.AlertDialog
+import android.widget.Button
+import android.widget.CheckBox
+import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.ktx.Firebase
 
+@Suppress("DEPRECATION")
 class SignUpActivity : BaseActivity() {
 
     private lateinit var toolbarSignUp: Toolbar
@@ -80,11 +81,11 @@ class SignUpActivity : BaseActivity() {
         val allowedRegexForUserName = Regex("^[a-z0-9_-]*$")
         val allowedRegexForName = Regex("^[a-zA-Z0-9_-]*$")
         //val passWordRegex = Regex("^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#\$%^&*()_+\\-=\\[\\]{}|\\\\:;'\"<>,.?/]).{8,}\$")
-        val reservedUsernames = listOf("admin", "priceless", "root", "moderator", "support", "official",
+        val reservedUsernames = listOf("admin", "root", "moderator", "support", "official",
             "anonymous", "system", "bot", "test", "report", "feedback", "contact", "help", "terms",
             "privacy", "security", "register", "login", "logout", "signup", "settings", "profile",
             "account", "user", "users", "blocked", "banned", "spam", "feedback", "master", "invalid",
-            "invalidusername", "unavailable", "service", "error", "server", "blockeduser", "guest")
+            "unavailable", "service", "error", "server", "guest")
         when {
             TextUtils.isEmpty(userName) -> {
                 showErrorSnackBar("Please Enter Your User Name", true)

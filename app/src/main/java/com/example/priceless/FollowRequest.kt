@@ -4,5 +4,4 @@ data class FollowRequest(var senderUserID: String = "",
                          var senderUserName: String = "",
                          var senderProfilePic: String = "",
                          var receiverUserID: String = "",
-                         var accepted: Boolean = false) {
-}
+                         var accepted: Boolean = false)

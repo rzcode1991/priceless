@@ -21,7 +21,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="start">
+            android:gravity="start"
+            tools:ignore="UseCompoundDrawables">
 
             <ImageView
                 android:id="@+id/iv_profile_pic_sold_post_item"
@@ -29,7 +30,8 @@
                 android:layout_height="50dp"
                 android:layout_margin="4dp"
                 android:layout_gravity="start|top"
-                android:src="@drawable/ic_baseline_account_circle_24"/>
+                android:src="@drawable/ic_baseline_account_circle_24"
+                tools:ignore="ContentDescription" />
 
             <TextView
                 android:id="@+id/tv_user_name_sold_post_item"
@@ -40,7 +42,8 @@
                 android:layout_margin="2dp"
                 android:text="UserName"
                 android:textSize="15sp"
-                android:textColor="@color/colorPrimaryDark"/>
+                android:textColor="@color/colorPrimaryDark"
+                tools:ignore="HardcodedText" />
 
         </LinearLayout>
 
@@ -62,7 +65,8 @@
                 android:layout_marginStart="4dp"
                 android:layout_marginEnd="4dp"
                 android:layout_marginTop="10dp"
-                android:layout_marginBottom="4dp"/>
+                android:layout_marginBottom="4dp"
+                tools:ignore="HardcodedText" />
 
             <ImageView
                 android:id="@+id/iv_post_image_sold_post_item"
@@ -72,7 +76,8 @@
                 android:layout_gravity="center"
                 android:layout_margin="2dp"
                 android:visibility="gone"
-                android:src="@drawable/white_image_background"/>
+                android:src="@drawable/white_image_background"
+                tools:ignore="ContentDescription" />
 
         </LinearLayout>
 
@@ -80,7 +85,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_margin="4dp">
+            android:layout_margin="4dp"
+            tools:ignore="DisableBaselineAlignment">
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -98,7 +104,8 @@
                     android:layout_gravity="start|center"
                     android:layout_marginBottom="4dp"
                     android:textSize="12sp"
-                    android:textColor="#5E5A5A"/>
+                    android:textColor="#5E5A5A"
+                    tools:ignore="HardcodedText" />
 
                 <TextView
                     android:id="@+id/tv_price_sold_post_item"
@@ -108,7 +115,8 @@
                     android:layout_gravity="start|center"
                     android:layout_marginTop="2dp"
                     android:textSize="12sp"
-                    android:textColor="#5E5A5A"/>
+                    android:textColor="#5E5A5A"
+                    tools:ignore="HardcodedText" />
 
             </LinearLayout>
 

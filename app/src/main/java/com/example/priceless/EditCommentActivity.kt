@@ -25,6 +25,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.io.IOException
 
+@Suppress("DEPRECATION")
 class EditCommentActivity : BaseActivity(), OnClickListener {
 
     private lateinit var tvCommentText: TextView
@@ -210,6 +211,7 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK){
@@ -338,7 +340,7 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
     }
 
     private fun deletePublicComment(){
-        FireStoreClass().deletePublicComment(comment.postOwnerUID,
+        FireStoreClass().deletePublicComment(comment.writerUID, comment.postOwnerUID,
             comment.postID, comment.commentID) { success ->
             if (success){
                 if (comment.commentPhoto.isNotEmpty()){

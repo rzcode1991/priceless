@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -21,7 +20,8 @@
             android:gravity="center"
             android:layout_gravity="center"
             android:textSize="30sp"
-            android:textColor="@color/black"/>
+            android:textColor="@color/black"
+            tools:ignore="HardcodedText" />
 
     </androidx.appcompat.widget.Toolbar>
 
@@ -49,7 +49,8 @@
                     android:layout_height="180dp"
                     android:scaleType="fitXY"
                     android:layout_gravity="center"
-                    android:background="@drawable/empty_profile_pic"/>
+                    android:background="@drawable/empty_profile_pic"
+                    tools:ignore="ContentDescription" />
 
                 <View
                     android:layout_width="match_parent"
@@ -66,7 +67,8 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                tools:ignore="HardcodedText">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_UserName_profile"
@@ -86,7 +88,8 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                tools:ignore="HardcodedText">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_firstName_profile"
@@ -106,7 +109,8 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                tools:ignore="HardcodedText">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_lastName_profile"
@@ -126,7 +130,8 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                tools:ignore="HardcodedText">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_email_profile"
@@ -146,7 +151,8 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                tools:ignore="HardcodedText">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_wallet_profile"
@@ -166,7 +172,8 @@
                 android:layout_marginStart="10dp"
                 android:layout_marginEnd="10dp"
                 android:layout_marginBottom="10dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                tools:ignore="HardcodedText">
 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_phoneNumber_profile"
@@ -195,7 +202,8 @@
                     android:elevation="1dp"
                     android:background="@color/white"
                     android:text="Public Profile"
-                    android:textColor="@color/black"/>
+                    android:textColor="@color/black"
+                    tools:ignore="HardcodedText" />
 
                 <RadioButton
                     android:id="@+id/rb_private_profile"
@@ -207,7 +215,8 @@
                     android:elevation="1dp"
                     android:background="@color/white"
                     android:text="Private Profile"
-                    android:textColor="@color/black"/>
+                    android:textColor="@color/black"
+                    tools:ignore="HardcodedText" />
 
             </RadioGroup>
 
@@ -222,7 +231,8 @@
                 android:backgroundTint="@color/white"
                 android:text="Save"
                 android:textColor="@color/black"
-                android:textAllCaps="false"/>
+                android:textAllCaps="false"
+                tools:ignore="HardcodedText" />
 
             <Button
                 android:id="@+id/btn_LogOut_profile"
@@ -235,7 +245,8 @@
                 android:backgroundTint="@color/white"
                 android:text="LogOut"
                 android:textColor="@color/black"
-                android:textAllCaps="false"/>
+                android:textAllCaps="false"
+                tools:ignore="HardcodedText" />
 
         </LinearLayout>
 

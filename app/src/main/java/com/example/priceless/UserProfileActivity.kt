@@ -153,9 +153,7 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
                 return@launch
             }
 
-            Log.d("--- all posts beginning:", "${allPosts.size}")
             val visiblePosts = ArrayList(allPosts.filter { it.visibility })
-            Log.d("--- already visible posts beginning:", "${visiblePosts.size}")
             val postsToUpdate = mutableListOf<PostStructure>()
             val timeJob = async { getTimeNow() }
             timeJob.await()
@@ -164,7 +162,6 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
                     if (!post.visibility){
                         if (secondsNow.toLong() >= post.timeToShare.toLong()) {
                             postsToUpdate.add(post)
-                            Log.d("--- posts to update are:", "${postsToUpdate.size}")
                         }
                     }
                 }
@@ -174,7 +171,6 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
                     val postToBeUpdated = postsToUpdate[0]
-                    Log.d("--- 1 post t b updated is:", "$postToBeUpdated")
                     val postHashMap = HashMap<String, Any>()
                     postHashMap["visibility"] = true
                     postHashMap["timeCreatedMillis"] = secondsNow
@@ -190,12 +186,10 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
                     if (updatePostJob.await()) {
                         postToBeUpdated.timeCreatedMillis = secondsNow
                         visiblePosts.add(postToBeUpdated)
-                        Log.d("--- visible posts after adding 1 post for update:", "${visiblePosts.size}")
                     }else{
                         Toast.makeText(this@UserProfileActivity, "err during update a post.", Toast.LENGTH_SHORT).show()
                     }
                 }else{
-                    Log.d("--- multiple posts to be updated are:", "${postsToUpdate.size}")
                     val batchUpdates = mutableMapOf<String, Map<String, Any>>()
                     for (eachPost in postsToUpdate) {
                         val postHashMap = HashMap<String, Any>()
@@ -213,20 +207,18 @@ class UserProfileActivity : BaseActivity(), OnClickListener{
                     }
                     if (batchUpdateJob.await()) {
                         visiblePosts.addAll(postsToUpdate)
-                        Log.d("--- visible posts after adding multiple posts for update:", "${visiblePosts.size}")
                     } else {
                         Toast.makeText(this@UserProfileActivity, "err during batch update posts.", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
-            Log.d("user is:", "$userInfo")
             for (i in allPosts){
                 i.profilePicture = userInfo.image
                 i.userName = userInfo.userName
             }
             allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
             recyclerView.visibility = VISIBLE
-            val adapter = RecyclerviewAdapter(this@UserProfileActivity, allPosts, currentUserID)
+            val adapter = RecyclerviewAdapter(this@UserProfileActivity, allPosts)
             adapter.notifyDataSetChanged()
             val layoutManager = LinearLayoutManager(this@UserProfileActivity)
             recyclerView.layoutManager = layoutManager

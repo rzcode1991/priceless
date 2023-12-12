@@ -19,6 +19,7 @@ import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.*
 import java.io.IOException
 
+@Suppress("DEPRECATION")
 class ReplyCommentActivity : BaseActivity(), OnClickListener {
 
     private lateinit var ivProfilePic: ImageView
@@ -80,6 +81,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
         ibLikeMainComment.setOnClickListener(this@ReplyCommentActivity)
         ibAddPhotoToReply.setOnClickListener(this@ReplyCommentActivity)
         btnSendReply.setOnClickListener(this@ReplyCommentActivity)
+        tvMainCommentText.setOnClickListener(this@ReplyCommentActivity)
 
     }
 
@@ -273,6 +275,20 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
                         }
                     }
                 }
+                R.id.tv_main_comment_text_reply -> {
+                    FireStoreClass().getASinglePostFromFireStore(comment.postOwnerUID,
+                        comment.postID) { post ->
+                        if (post != null){
+                            val intent = Intent(this, CommentsActivity::class.java)
+                            intent.putExtra("post", post)
+                            startActivity(intent)
+                            finish()
+                        }else{
+                            showErrorSnackBar("Check Your Internet Connection Or " +
+                                    "Make Sure The Post Is Not Deleted!", true)
+                        }
+                    }
+                }
             }
         }
     }
@@ -304,7 +320,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
                     val writerProfilePic = ""
                     val isPrivate = comment.isPrivate
                     val edited = false
-                    val replyID = ""
+                    val replyID = System.currentTimeMillis().toString()
                     val newReplyComment = CommentStructure(text, commentPhoto, timeCreated,
                         timeCreatedToShow, postID, topCommentIDForReply, writerOfTopCommentUID, postOwnerUID,
                         writerOfReplyUID, writerUserName, writerProfilePic, isPrivate, edited, replyID)
@@ -406,8 +422,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
                 replies.sortByDescending { it.timeCreated.toLong() }
                 progressBarReplies.visibility = View.GONE
                 rvReplies.visibility = VISIBLE
-                val adapter = CommentsRvAdapter(this@ReplyCommentActivity, replies,
-                    currentUserID)
+                val adapter = CommentsRvAdapter(this@ReplyCommentActivity, replies)
                 adapter.notifyDataSetChanged()
                 val layOutManager = LinearLayoutManager(this@ReplyCommentActivity)
                 rvReplies.layoutManager = layOutManager
@@ -450,6 +465,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK){

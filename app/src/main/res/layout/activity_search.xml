@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -36,7 +35,8 @@
                     android:hint="UserName"
                     android:layout_marginStart="10dp"
                     android:layout_marginEnd="10dp"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    tools:ignore="HardcodedText">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_search_username"
@@ -60,7 +60,8 @@
                     android:backgroundTint="@color/white"
                     android:text="Search"
                     android:textColor="@color/black"
-                    android:textAllCaps="false"/>
+                    android:textAllCaps="false"
+                    tools:ignore="HardcodedText" />
 
             </LinearLayout>
 
@@ -81,7 +82,8 @@
                     android:layout_height="50dp"
                     android:layout_marginEnd="5dp"
                     android:layout_gravity="start|center"
-                    android:src="@drawable/ic_baseline_account_circle_24"/>
+                    android:src="@drawable/ic_baseline_account_circle_24"
+                    tools:ignore="ContentDescription" />
 
                 <TextView
                     android:id="@+id/tv_username_searched_user"
@@ -92,7 +94,8 @@
                     android:layout_marginStart="5dp"
                     android:text="UserName"
                     android:textSize="15sp"
-                    android:textColor="@color/colorPrimaryDark"/>
+                    android:textColor="@color/colorPrimaryDark"
+                    tools:ignore="HardcodedText" />
 
                 <LinearLayout
                     android:id="@+id/layout_first_last_name_search"
@@ -109,7 +112,8 @@
                         android:text="first name:"
                         android:textColor="@color/colorPrimaryText"
                         android:layout_marginBottom="2dp"
-                        android:textSize="12sp"/>
+                        android:textSize="12sp"
+                        tools:ignore="HardcodedText" />
 
                     <TextView
                         android:id="@+id/tv_last_name_search"
@@ -118,7 +122,8 @@
                         android:text="last name:"
                         android:textColor="@color/colorPrimaryText"
                         android:layout_marginTop="2dp"
-                        android:textSize="12sp"/>
+                        android:textSize="12sp"
+                        tools:ignore="HardcodedText" />
 
                 </LinearLayout>
 
@@ -158,7 +163,8 @@
                     android:text="Stop It"
                     android:visibility="gone"
                     android:textColor="@color/black"
-                    android:textAllCaps="false"/>
+                    android:textAllCaps="false"
+                    tools:ignore="HardcodedText" />
 
             </LinearLayout>
 
@@ -181,7 +187,8 @@
                     android:text="Accept"
                     android:visibility="visible"
                     android:textAllCaps="false"
-                    android:textColor="@color/black" />
+                    android:textColor="@color/black"
+                    tools:ignore="ButtonStyle,HardcodedText" />
 
                 <Button
                     android:id="@+id/btn_reject_request_search"
@@ -192,7 +199,8 @@
                     android:text="Reject"
                     android:visibility="visible"
                     android:textAllCaps="false"
-                    android:textColor="@color/black" />
+                    android:textColor="@color/black"
+                    tools:ignore="ButtonStyle,HardcodedText" />
 
             </LinearLayout>
 
@@ -219,7 +227,8 @@
                 android:visibility="gone"
                 android:textSize="20sp"
                 android:layout_marginTop="30dp"
-                android:textColor="@color/colorPrimaryText"/>
+                android:textColor="@color/colorPrimaryText"
+                tools:ignore="HardcodedText" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_view_searched_user"

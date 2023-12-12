@@ -1,7 +1,11 @@
 package com.example.priceless.ui.home
 
+import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.app.Dialog
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -14,12 +18,12 @@ import com.example.priceless.databinding.FragmentHomeBinding
 import kotlinx.coroutines.*
 
 
+@Suppress("DEPRECATION")
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private var dateNow: String = ""
     private var secondsNow: String = ""
-    private lateinit var dateAndTimePair: Pair<String, String>
     private lateinit var coroutineScope: CoroutineScope
     private lateinit var homeViewModel: HomeViewModel
     private lateinit var progressDialog: Dialog
@@ -59,6 +63,7 @@ class HomeFragment : Fragment() {
         return root
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         Log.d("onViewCreated called", "")
@@ -78,11 +83,11 @@ class HomeFragment : Fragment() {
 
         loadPosts()
 
-        val currentUserID = FireStoreClass().getUserID()
+        //val currentUserID = FireStoreClass().getUserID()
 
         homeViewModel.posts.observe(viewLifecycleOwner) { posts ->
             binding.pbFragmentHome.visibility = View.GONE
-            val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts), currentUserID)
+            val adapter = RecyclerviewAdapter(requireContext(), ArrayList(posts))
             adapter.notifyDataSetChanged()
             val layoutManager = LinearLayoutManager(requireContext())
             binding.recyclerView.layoutManager = layoutManager
@@ -122,9 +127,7 @@ class HomeFragment : Fragment() {
                 return@launch
             }
 
-            Log.d("--- all posts beginning:", "${allPosts.size}")
             val visiblePosts = ArrayList(allPosts.filter { it.visibility })
-            Log.d("--- already visible posts beginning:", "${visiblePosts.size}")
             val postsToUpdate = mutableListOf<PostStructure>()
             if (System.currentTimeMillis() > lastRequestTimeMillis + requestCoolDownMillis){
                 lastRequestTimeMillis = System.currentTimeMillis()
@@ -136,7 +139,6 @@ class HomeFragment : Fragment() {
                     if (!post.visibility){
                         if (secondsNow.toLong() >= post.timeToShare.toLong()) {
                             postsToUpdate.add(post)
-                            Log.d("--- posts to update are:", "${postsToUpdate.size}")
                         }
                     }
                 }
@@ -150,7 +152,6 @@ class HomeFragment : Fragment() {
             if (postsToUpdate.isNotEmpty()){
                 if (postsToUpdate.size == 1) {
                     val postToBeUpdated = postsToUpdate[0]
-                    Log.d("--- 1 post t b updated is:", "$postToBeUpdated")
                     val postHashMap = HashMap<String, Any>()
                     postHashMap["visibility"] = true
                     postHashMap["timeCreatedMillis"] = secondsNow
@@ -166,14 +167,12 @@ class HomeFragment : Fragment() {
                         postToBeUpdated.visibility = true
                         postToBeUpdated.timeCreatedMillis = secondsNow
                         visiblePosts.add(postToBeUpdated)
-                        Log.d("--- visible posts after adding 1 post for update:", "${visiblePosts.size}")
                     }else{
                         if (_binding != null){
                             Toast.makeText(context, "err during update a post.", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }else{
-                    Log.d("--- multiple posts to be updated are:", "${postsToUpdate.size}")
                     val batchUpdates = mutableMapOf<String, Map<String, Any>>()
                     for (eachPost in postsToUpdate) {
                         val postHashMap = HashMap<String, Any>()
@@ -192,7 +191,6 @@ class HomeFragment : Fragment() {
                     }
                     if (batchUpdateJob.await()) {
                         visiblePosts.addAll(postsToUpdate)
-                        Log.d("--- visible posts after adding multiple posts for update:", "${visiblePosts.size}")
                     } else {
                         if (_binding != null){
                             Toast.makeText(context, "err during batch update posts.", Toast.LENGTH_SHORT).show()
@@ -207,7 +205,6 @@ class HomeFragment : Fragment() {
                 }
                 val userInfo = deferredUserInfo.await()
                 if (userInfo != null) {
-                    Log.d("--- user info is:", "$userInfo")
                     allPosts.forEach { postItem ->
                         postItem.profilePicture = userInfo.image
                         postItem.userName = userInfo.userName
@@ -215,7 +212,6 @@ class HomeFragment : Fragment() {
                 }
             }
             userInfoJob.await()
-            //Log.d("--- all final visible posts are:", "${visiblePosts.size}")
             allPosts.sortByDescending { it.timeCreatedMillis.toLong() }
             if (_binding != null){
                 binding.recyclerView.visibility = View.VISIBLE
@@ -246,6 +242,7 @@ class HomeFragment : Fragment() {
     }
 
 
+    /*
     private fun showProgressDialog(){
         //progressDialog = Dialog(requireActivity())
         progressDialog.setContentView(R.layout.progress_dialog)
@@ -258,12 +255,16 @@ class HomeFragment : Fragment() {
         progressDialog.dismiss()
     }
 
+     */
 
+
+    @Deprecated("Deprecated in Java")
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         inflater.inflate(R.menu.menu_options, menu)
         super.onCreateOptionsMenu(menu, inflater)
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.menu_profile -> {
@@ -282,6 +283,14 @@ class HomeFragment : Fragment() {
                 true
             }
             R.id.menu_exit -> {
+                if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+                    stopFireStoreListenerService()
+                }else{
+                    if (isServiceRunning(FireStoreListenerJobIntentService::class.java)){
+                        val serviceIntent = Intent(activity, FireStoreListenerJobIntentService::class.java)
+                        requireContext().stopService(serviceIntent)
+                    }
+                }
                 activity?.finishAffinity()
                 true
             }
@@ -289,10 +298,26 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun stopFireStoreListenerService(){
+        val serviceIntent = Intent(activity, FireStoreListenerService::class.java)
+        if (isServiceRunning(FireStoreListenerService::class.java)) {
+            requireContext().stopService(serviceIntent)
+        }
+    }
+
+    private fun isServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = requireContext().getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+            if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
-        Log.d("onDestroyView called", "")
         _binding = null
         coroutineScope.cancel()
         //FragmentActivity().finish()
@@ -310,7 +335,6 @@ class HomeFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        Log.d("onPause called", "")
         coroutineScope.cancel()
     }
 
@@ -318,7 +342,6 @@ class HomeFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        Log.d("onResume called", "")
         coroutineScope = CoroutineScope(Dispatchers.Main)
         loadPosts()
     }

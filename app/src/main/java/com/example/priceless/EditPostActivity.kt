@@ -4,7 +4,6 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -19,10 +18,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.*
-import kotlin.collections.HashMap
 
+@Suppress("DEPRECATION")
 class EditPostActivity : BaseActivity(), OnClickListener {
 
     private lateinit var ivProfilePic: ImageView
@@ -44,8 +41,6 @@ class EditPostActivity : BaseActivity(), OnClickListener {
     private var newPostImage: String = ""
     private var dateNow: String = ""
     private var secondsNow: String = ""
-    private var getTime: GetTime? = null
-    private lateinit var dateAndTimePair: Pair<String, String>
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -192,6 +187,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK){

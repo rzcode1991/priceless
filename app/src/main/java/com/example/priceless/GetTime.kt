@@ -1,6 +1,5 @@
 package com.example.priceless
 
-import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -8,8 +7,6 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.io.IOException
 import java.net.SocketTimeoutException
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.TimeUnit
 
 class GetTime {
@@ -39,7 +36,6 @@ class GetTime {
 
                         if (!dateTime.isNullOrEmpty() && dateTimeUnix != 0L && gmtOffset != 0L) {
                             val millisInString = (dateTimeUnix - gmtOffset).toString()
-                            Log.d("Extracted date_time", "dateTime: $dateTime millis: $millisInString")
 
                             val dateAndTimePair = Pair(dateTime, millisInString)
                             Result.success(dateAndTimePair)

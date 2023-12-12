@@ -1,9 +1,6 @@
 package com.example.priceless.ui.notifications
 
-import android.app.Dialog
-import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,7 +8,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.SimpleItemAnimator
 import com.example.priceless.*
 import com.example.priceless.databinding.FragmentNotificationsBinding
 import kotlinx.coroutines.*
@@ -32,19 +28,16 @@ class NotificationsFragment : Fragment() {
     ): View {
         //val notificationsViewModel = ViewModelProvider(this).get(NotificationsViewModel::class.java)
 
-        Log.d("--------", "onCreateView called")
         _binding = FragmentNotificationsBinding.inflate(inflater, container, false)
-        val root: View = binding.root
 
 
-        return root
+        return binding.root
     }
 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        Log.d("--------", "onViewCreated called")
         //notificationsViewModel = ViewModelProvider(this).get(NotificationsViewModel::class.java)
         notificationsViewModel = ViewModelProvider(requireActivity()).get(NotificationsViewModel::class.java)
 
@@ -93,7 +86,6 @@ class NotificationsFragment : Fragment() {
                     if (!requests.isNullOrEmpty()) {
                         val finalRequests = ArrayList<FollowRequest>()
                         finalRequests.addAll(requests)
-                        Log.d("---request size from fire store:", finalRequests.size.toString())
                         CoroutineScope(Dispatchers.Main).launch {
                             val userGroupedRequests = finalRequests.groupBy { it.senderUserID }
                             val userInfoJobs = userGroupedRequests.map { (userId, groupRequests) ->
@@ -115,6 +107,15 @@ class NotificationsFragment : Fragment() {
 
                             finalRequests.sortByDescending { it.senderUserID }
                             notificationsViewModel.updateRequestsForViewModel(finalRequests)
+
+                            //clearNotifications()
+                            //for ((index, request) in finalRequests.withIndex()) {
+                            //    if (!request.accepted){
+                            //        sendNotification("From ${request.senderUserName}",
+                            //            index, request)
+                            //    }
+                            //}
+
                             if (_binding != null){
                                 binding.ibRefreshNotifications.setImageResource(R.drawable.ic_baseline_refresh_24)
                             }
@@ -137,17 +138,73 @@ class NotificationsFragment : Fragment() {
         }
     }
 
+    /*
+    private fun sendNotification(messageBody: String, notificationId: Int, request: FollowRequest) {
+        if (isAdded) {
+            val intent = Intent(requireContext(), UserProfileActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            intent.putExtra("userID", request.senderUserID)
+
+            val pendingIntent = PendingIntent.getActivity(
+                requireContext(), notificationId, intent,
+                PendingIntent.FLAG_ONE_SHOT
+            )
+
+            val channelId = "Your_Channel_ID"
+            val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+
+            val notificationBuilder = NotificationCompat.Builder(requireContext(), channelId)
+                .setSmallIcon(R.drawable.ic_baseline_account_circle_24)
+                .setContentTitle("Follow Request")
+                .setContentText(messageBody)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+
+            val notificationManager =
+                requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            // Create a channel for Android Oreo and above
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = NotificationChannel(
+                    channelId,
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+                notificationManager.createNotificationChannel(channel)
+            }
+
+            notificationManager.notify(notificationId, notificationBuilder.build())
+        }
+    }
+
+    private fun clearNotifications() {
+        if (isAdded){
+            val notificationManager =
+                requireContext().getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            // Clear all notifications
+            notificationManager.cancelAll()
+
+            // Alternatively, you can clear a specific notification by ID
+            // notificationManager.cancel(notificationId)
+        }
+    }
+
+     */
+
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-        Log.d("--------", "onDestroyView called")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        Log.d("--------", "onResume called")
         //loadReceivedRequests()
     }
+
+    /*
+    override fun onResume() {
+        super.onResume()
+        //loadReceivedRequests()
+    }
+
+     */
 
 }
