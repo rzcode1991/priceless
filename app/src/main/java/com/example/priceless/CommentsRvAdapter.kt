@@ -49,7 +49,7 @@ class CommentsRvAdapter(val context: Context,
 
         if (currentUserID.isNotEmpty()){
             if (comment.writerProfilePic.isNotEmpty()){
-                GlideLoader(context).loadImageUri(comment.writerProfilePic, holder.ivProfilePic)
+                GlideLoader(context).loadImageUriCircleCrop(comment.writerProfilePic, holder.ivProfilePic)
             }else{
                 holder.ivProfilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
             }

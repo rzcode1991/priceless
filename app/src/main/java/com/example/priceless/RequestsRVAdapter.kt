@@ -51,7 +51,7 @@ class RequestsRVAdapter(val context: Context, private val requestList: ArrayList
         val senderUserName = currentRequest.senderUserName
 
         if (senderProfilePic.isNotEmpty()){
-            GlideLoader(context).loadImageUri(senderProfilePic, holder.profilePic)
+            GlideLoader(context).loadImageUriCircleCrop(senderProfilePic, holder.profilePic)
         }else{
             holder.profilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
         }

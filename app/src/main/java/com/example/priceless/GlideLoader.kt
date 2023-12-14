@@ -16,5 +16,23 @@ class GlideLoader(val context: Context){
         }
     }
 
+    fun loadImageUriFitCenter(imageUri: Any, imageView: ImageView){
+        try {
+            Glide.with(context).load(imageUri).fitCenter().diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(R.drawable.empty_profile_pic).into(imageView)
+        }catch (e: IOException){
+            e.printStackTrace()
+        }
+    }
+
+    fun loadImageUriCircleCrop(imageUri: Any, imageView: ImageView){
+        try {
+            Glide.with(context).load(imageUri).circleCrop().diskCacheStrategy(DiskCacheStrategy.ALL)
+                .placeholder(R.drawable.empty_profile_pic).into(imageView)
+        }catch (e: IOException){
+            e.printStackTrace()
+        }
+    }
+
 
 }

@@ -18,7 +18,7 @@ class FullScreenPostImageActivity : AppCompatActivity() {
             val postImage = intent.getStringExtra("post_image")
             val ivFullScreenPostImage: ImageView = findViewById(R.id.iv_full_screen_post_image)
             if (postImage != null){
-                GlideLoader(this).loadImageUri(postImage, ivFullScreenPostImage)
+                GlideLoader(this).loadImageUriFitCenter(postImage, ivFullScreenPostImage)
             }
         }
     }

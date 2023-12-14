@@ -157,7 +157,7 @@ class RecyclerviewAdapter(val context: Context, private val postList: ArrayList<
                 holder.tvDeleteInvisiblePost.visibility = View.GONE
             }
             if (currentItemPost.profilePicture.isNotEmpty()){
-                GlideLoader(context).loadImageUri(currentItemPost.profilePicture, holder.profilePic)
+                GlideLoader(context).loadImageUriCircleCrop(currentItemPost.profilePicture, holder.profilePic)
             }else{
                 holder.profilePic.setImageResource(R.drawable.ic_baseline_account_circle_24)
             }
