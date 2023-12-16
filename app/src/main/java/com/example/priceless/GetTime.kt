@@ -16,7 +16,7 @@ class GetTime {
         .build()
 
     private val apiEndpoint =
-        "http://api.timezonedb.com/v2.1/get-time-zone?key=3DP6C4MVV1ZV&format=json&by=zone&zone=Asia/Tehran"
+        "https://api.timezonedb.com/v2.1/get-time-zone?key=3DP6C4MVV1ZV&format=json&by=zone&zone=Asia/Tehran"
 
 
     suspend fun getCurrentTimeAndDate(): Result<Pair<String, String>> {

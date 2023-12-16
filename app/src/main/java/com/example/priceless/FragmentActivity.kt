@@ -1,7 +1,6 @@
 package com.example.priceless
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
@@ -23,6 +22,7 @@ class FragmentActivity : BaseActivity() {
         binding = ActivityFragmentBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        /*
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
             val serviceIntent = Intent(this, FireStoreListenerService::class.java)
             startService(serviceIntent)
@@ -30,6 +30,10 @@ class FragmentActivity : BaseActivity() {
             val serviceIntent = Intent(this, FireStoreListenerJobIntentService::class.java)
             FireStoreListenerJobIntentService.enqueueWork(this, serviceIntent)
         }
+         */
+
+        val serviceIntent = Intent(this, FireStoreListenerService::class.java)
+        startService(serviceIntent)
 
         val navView: BottomNavigationView = binding.navView
 

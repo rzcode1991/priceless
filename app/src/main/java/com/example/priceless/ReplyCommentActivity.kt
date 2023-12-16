@@ -1,9 +1,10 @@
 package com.example.priceless
 
-import android.app.Activity
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -11,7 +12,7 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.VISIBLE
 import android.widget.*
-import androidx.core.app.ActivityCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -246,14 +247,19 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
                     }
                 }
                 R.id.ib_add_photo_to_reply_comment -> {
-                    if (ContextCompat.checkSelfPermission(this,
-                            android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                        == PackageManager.PERMISSION_GRANTED){
-                        Constants.showImageFromStorage(this@ReplyCommentActivity)
-                    }else{
-                        ActivityCompat.requestPermissions(this@ReplyCommentActivity,
-                            arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                            Constants.PermissionExternalStorageCode)
+                    val readImagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Manifest.permission.READ_MEDIA_IMAGES
+                    } else {
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    }
+
+                    if(ContextCompat.checkSelfPermission(this,
+                            readImagePermission) == PackageManager.PERMISSION_GRANTED){
+                        //permission granted
+                        showImageFromStorage()
+                    } else {
+                        //request permission here
+                        requestPermissionLauncher.launch(readImagePermission)
                     }
                 }
                 R.id.ib_remove_photo_reply_comment -> {
@@ -291,6 +297,46 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
                 }
             }
         }
+    }
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                showImageFromStorage()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Grant storage permission",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+    private val getContent =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    imageURI = uri
+                    if (imageURI != null){
+                        ivReplyPhoto.visibility = VISIBLE
+                        GlideLoader(this).loadImageUri(imageURI!!, ivReplyPhoto)
+                        ibRemovePhotoFromReply.visibility = VISIBLE
+                        ibRemovePhotoFromReply.setOnClickListener(this@ReplyCommentActivity)
+                    }else{
+                        ivReplyPhoto.visibility = View.GONE
+                        ibRemovePhotoFromReply.visibility = View.GONE
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "image selection failed", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Image selection failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private fun showImageFromStorage() {
+        getContent.launch("image/*")
     }
 
     fun uploadImageOnCloudSuccess(imageUrl: String){
@@ -452,6 +498,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    /*
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
                                             grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -459,8 +506,7 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 Constants.showImageFromStorage(this@ReplyCommentActivity)
             }else{
-                Toast.makeText(this, "oops! you didn't gave permission to app for access " +
-                        "storage, you can change it in your device's settings", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Grant storage permission.", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -493,6 +539,8 @@ class ReplyCommentActivity : BaseActivity(), OnClickListener {
             ibRemovePhotoFromReply.visibility = View.GONE
         }
     }
+
+     */
 
     private fun validateUserInput(): Boolean {
         val replyText = etNewReply.text.toString()

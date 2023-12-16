@@ -1,9 +1,10 @@
 package com.example.priceless
 
-import android.app.Activity
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -11,8 +12,8 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.VISIBLE
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -105,14 +106,19 @@ class EditPostActivity : BaseActivity(), OnClickListener {
                         btnDeletePost.visibility = VISIBLE
                         etPostText.isEnabled = true
                         ivPostImage.setOnClickListener {
-                            if (ContextCompat.checkSelfPermission(this,
-                                    android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                                == PackageManager.PERMISSION_GRANTED){
-                                Constants.showImageFromStorage(this@EditPostActivity)
-                            }else{
-                                ActivityCompat.requestPermissions(this@EditPostActivity,
-                                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                                    Constants.PermissionExternalStorageCode)
+                            val readImagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                Manifest.permission.READ_MEDIA_IMAGES
+                            } else {
+                                Manifest.permission.READ_EXTERNAL_STORAGE
+                            }
+
+                            if(ContextCompat.checkSelfPermission(this,
+                                    readImagePermission) == PackageManager.PERMISSION_GRANTED){
+                                //permission granted
+                                showImageFromStorage()
+                            } else {
+                                //request permission here
+                                requestPermissionLauncher.launch(readImagePermission)
                             }
                         }
                         editOrUpdateSituation = "update"
@@ -173,7 +179,41 @@ class EditPostActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                showImageFromStorage()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Grant storage permission",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
 
+    private val getContent =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    imageURI = uri
+                    if (imageURI != null){
+                        GlideLoader(this).loadImageUri(imageURI!!, ivPostImage)
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "image selection failed", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Image selection failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private fun showImageFromStorage() {
+        getContent.launch("image/*")
+    }
+
+    /*
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
                                             grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -181,8 +221,7 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 Constants.showImageFromStorage(this@EditPostActivity)
             }else{
-                Toast.makeText(this, "oops! you didn't gave permission to app for access " +
-                        "storage, you can change it in your device's settings", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "grant storage permission.", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -208,6 +247,8 @@ class EditPostActivity : BaseActivity(), OnClickListener {
             Log.e("image selection failed", "image has not been selected")
         }
     }
+
+     */
 
 
     private fun validateUserInput(): Boolean{

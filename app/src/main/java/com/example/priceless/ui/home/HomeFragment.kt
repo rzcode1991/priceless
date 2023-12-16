@@ -5,7 +5,6 @@ import android.app.ActivityManager
 import android.app.Dialog
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -283,6 +282,7 @@ class HomeFragment : Fragment() {
                 true
             }
             R.id.menu_exit -> {
+                /*
                 if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
                     stopFireStoreListenerService()
                 }else{
@@ -291,6 +291,11 @@ class HomeFragment : Fragment() {
                         requireContext().stopService(serviceIntent)
                     }
                 }
+                activity?.finishAffinity()
+                true
+                 */
+
+                stopFireStoreListenerService()
                 activity?.finishAffinity()
                 true
             }

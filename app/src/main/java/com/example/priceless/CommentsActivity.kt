@@ -1,9 +1,10 @@
 package com.example.priceless
 
-import android.app.Activity
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -11,7 +12,7 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.VISIBLE
 import android.widget.*
-import androidx.core.app.ActivityCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -20,7 +21,6 @@ import kotlinx.coroutines.*
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.collections.ArrayList
 
 @Suppress("DEPRECATION")
 class CommentsActivity : BaseActivity(), OnClickListener {
@@ -45,7 +45,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
     private var likeSituation = false
     private var imageNameUrl: String = ""
     private var imageURI: Uri? = null
-    private var imageURIForRecyclerView: Uri? = null
+    //private var imageURIForRecyclerView: Uri? = null
     private var dateNow: String = ""
     private var secondsNow: String = ""
     private lateinit var progressBar: ProgressBar
@@ -219,14 +219,19 @@ class CommentsActivity : BaseActivity(), OnClickListener {
                     }
                 }
                 R.id.ib_add_photo_to_comment -> {
-                    if (ContextCompat.checkSelfPermission(this,
-                            android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                        == PackageManager.PERMISSION_GRANTED){
-                        Constants.showImageFromStorage(this@CommentsActivity)
-                    }else{
-                        ActivityCompat.requestPermissions(this@CommentsActivity,
-                            arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                            Constants.PermissionExternalStorageCode)
+                    val readImagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        Manifest.permission.READ_MEDIA_IMAGES
+                    } else {
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    }
+
+                    if(ContextCompat.checkSelfPermission(this,
+                            readImagePermission) == PackageManager.PERMISSION_GRANTED){
+                        //permission granted
+                        showImageFromStorage()
+                    } else {
+                        //request permission here
+                        requestPermissionLauncher.launch(readImagePermission)
                     }
                 }
                 R.id.ib_remove_comment_photo -> {
@@ -257,6 +262,45 @@ class CommentsActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                showImageFromStorage()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Grant storage permission",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+    private val getContent =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    imageURI = uri
+                    if (imageURI != null){
+                        ivCommentPhoto.visibility = VISIBLE
+                        GlideLoader(this).loadImageUri(imageURI!!, ivCommentPhoto)
+                        ibRemoveCommentPhoto.visibility = VISIBLE
+                        ibRemoveCommentPhoto.setOnClickListener(this@CommentsActivity)
+                    }else{
+                        ivCommentPhoto.visibility = View.GONE
+                        ibRemoveCommentPhoto.visibility = View.GONE
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "image selection failed", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Image selection failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private fun showImageFromStorage() {
+        getContent.launch("image/*")
+    }
 
     private fun addNewComment(){
         if (currentUserID.isNotEmpty()){
@@ -458,6 +502,7 @@ class CommentsActivity : BaseActivity(), OnClickListener {
     }
 
 
+    /*
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
                                             grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -465,19 +510,20 @@ class CommentsActivity : BaseActivity(), OnClickListener {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 Constants.showImageFromStorage(this@CommentsActivity)
             }else{
-                Toast.makeText(this, "oops! you didn't gave permission to app for access " +
-                        "storage, you can change it in your device's settings", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Grant storage permission", Toast.LENGTH_LONG).show()
             }
         }else if (requestCode == 200){
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 Constants.showImageFromStorageForRecyclerView(this@CommentsActivity)
             }else{
-                Toast.makeText(this, "oops! you didn't gave permission to app for access " +
-                        "storage, you can change it in your device's settings", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Grant storage permission", Toast.LENGTH_LONG).show()
             }
         }
     }
 
+     */
+
+    /*
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -517,6 +563,9 @@ class CommentsActivity : BaseActivity(), OnClickListener {
             Log.e("image selection failed", "image has not been selected")
         }
     }
+     */
+
+
 
     /*
     fun returnImageURIForRecyclerView(): Uri?{

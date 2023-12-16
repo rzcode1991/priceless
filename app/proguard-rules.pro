@@ -14,22 +14,34 @@
 
 # Uncomment this to preserve the line number information for
 # debugging stack traces.
--keepattributes SourceFile,LineNumberTable
+#-keepattributes SourceFile,LineNumberTable
 
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
--renamesourcefileattribute SourceFile
+#-renamesourcefileattribute SourceFile
 
 
 ###
 
-#-keep class com.example.priceless.User { *; }
-#-keepclassmembers class com.example.priceless.User { *; }
-## test comment both above
+-keep class com.example.priceless.User { *; }
+-keepclassmembers class com.example.priceless.User { *; }
 -keepclassmembernames class com.example.priceless.User { *; }
+
+-keep class com.example.priceless.FollowRequest { *; }
+-keepclassmembers class com.example.priceless.FollowRequest { *; }
 -keepclassmembernames class com.example.priceless.FollowRequest { *; }
+
+-keep class com.example.priceless.PostStructure { *; }
+-keepclassmembers class com.example.priceless.PostStructure { *; }
 -keepclassmembernames class com.example.priceless.PostStructure { *; }
+
+-keep class com.example.priceless.CommentStructure { *; }
+-keepclassmembers class com.example.priceless.CommentStructure { *; }
 -keepclassmembernames class com.example.priceless.CommentStructure { *; }
+
+-keep class com.example.priceless.GetTime { *; }
+-keepclassmembers class com.example.priceless.GetTime { *; }
+-keepclassmembernames class com.example.priceless.GetTime { *; }
 
 ###
 

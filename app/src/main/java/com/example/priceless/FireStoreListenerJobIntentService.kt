@@ -329,10 +329,17 @@ class FireStoreListenerJobIntentService : JobIntentService() {
             intent.putExtra("com.example.priceless.comment", commentExtra)
         }
 
-        val pendingIntent = PendingIntent.getActivity(
-            this, notificationId, intent,
-            PendingIntent.FLAG_ONE_SHOT
-        )
+        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getActivity(
+                this, notificationId, intent,
+                PendingIntent.FLAG_IMMUTABLE
+            )
+        }else{
+            PendingIntent.getActivity(
+                this, notificationId, intent,
+                PendingIntent.FLAG_ONE_SHOT
+            )
+        }
 
         val channelId = "Your_Channel_ID"
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)

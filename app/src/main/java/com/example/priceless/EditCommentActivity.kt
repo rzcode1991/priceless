@@ -1,22 +1,19 @@
 package com.example.priceless
 
-import android.app.Activity
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.VISIBLE
-import android.widget.Button
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.CoroutineScope
@@ -117,14 +114,19 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
                         btnDelete.visibility = VISIBLE
                         btnDelete.setOnClickListener(this)
                         ivCommentPhoto.setOnClickListener {
-                            if (ContextCompat.checkSelfPermission(this,
-                                    android.Manifest.permission.READ_EXTERNAL_STORAGE)
-                                == PackageManager.PERMISSION_GRANTED){
-                                Constants.showImageFromStorage(this@EditCommentActivity)
-                            }else{
-                                ActivityCompat.requestPermissions(this@EditCommentActivity,
-                                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
-                                    Constants.PermissionExternalStorageCode)
+                            val readImagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                Manifest.permission.READ_MEDIA_IMAGES
+                            } else {
+                                Manifest.permission.READ_EXTERNAL_STORAGE
+                            }
+
+                            if(ContextCompat.checkSelfPermission(this,
+                                    readImagePermission) == PackageManager.PERMISSION_GRANTED){
+                                //permission granted
+                                showImageFromStorage()
+                            } else {
+                                //request permission here
+                                requestPermissionLauncher.launch(readImagePermission)
                             }
                         }
                         editOrUpdateSituation = "update"
@@ -180,6 +182,44 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                showImageFromStorage()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Grant storage permission",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+    private val getContent =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    imageURI = uri
+                    if (imageURI != null){
+                        GlideLoader(this).loadImageUri(imageURI!!, ivCommentPhoto)
+                        ibRemovePhoto.visibility = VISIBLE
+                        ibRemovePhoto.setOnClickListener(this)
+                    }else{
+                        ibRemovePhoto.visibility = View.GONE
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "image selection failed", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Image selection failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private fun showImageFromStorage() {
+        getContent.launch("image/*")
+    }
+
     fun uploadImageOnCloudSuccess(newImageUrl: String){
         if (comment.commentPhoto.isNotEmpty()){
             FireStoreClass().deleteImageFromCloudStorage(comment.commentPhoto) { yep ->
@@ -198,6 +238,7 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
     }
 
 
+    /*
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
                                             grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -237,6 +278,8 @@ class EditCommentActivity : BaseActivity(), OnClickListener {
             Log.e("image selection failed", "image has not been selected")
         }
     }
+
+     */
 
     private fun updateComment(){
         CoroutineScope(Dispatchers.Main).launch {

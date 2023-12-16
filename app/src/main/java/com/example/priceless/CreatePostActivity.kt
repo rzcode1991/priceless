@@ -1,11 +1,12 @@
 package com.example.priceless
 
-import android.app.Activity
+import android.Manifest.permission.READ_MEDIA_IMAGES
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
 import android.util.Log
@@ -13,7 +14,7 @@ import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.VISIBLE
 import android.widget.*
-import androidx.core.app.ActivityCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -206,7 +207,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         if (userInfo != null){
             tvUserName.text = userInfo!!.userName
             if (userInfo!!.image.isNotEmpty()){
-                GlideLoader(this).loadImageUri(userInfo!!.image, ivProfilePic)
+                GlideLoader(this).loadImageUriCircleCrop(userInfo!!.image, ivProfilePic)
             }else{
                 GlideLoader(this).loadImageUri(R.drawable.ic_baseline_account_circle_24, ivProfilePic)
             }
@@ -216,6 +217,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
     override fun onClick(v: View?) {
         if (v != null){
             when(v.id){
+                /*
                 R.id.iv_post_image_create_post -> {
                     if (ContextCompat.checkSelfPermission(this,
                             android.Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -225,6 +227,23 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
                         ActivityCompat.requestPermissions(this@CreatePostActivity,
                             arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
                             Constants.PermissionExternalStorageCode)
+                    }
+                }
+                 */
+                R.id.iv_post_image_create_post -> {
+                    val readImagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        READ_MEDIA_IMAGES
+                    } else {
+                        android.Manifest.permission.READ_EXTERNAL_STORAGE
+                    }
+
+                    if(ContextCompat.checkSelfPermission(this,
+                            readImagePermission) == PackageManager.PERMISSION_GRANTED){
+                        //permission granted
+                        showImageFromStorage()
+                    } else {
+                        //request permission here
+                        requestPermissionLauncher.launch(readImagePermission)
                     }
                 }
                 R.id.btn_select_date -> {
@@ -270,8 +289,39 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
         }
     }
 
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                //Constants.showImageFromStorage(this@CreatePostActivity)
+                showImageFromStorage()
+            } else {
+                Toast.makeText(this, "Grant storage permission", Toast.LENGTH_LONG).show()
+            }
+        }
+
+    private val getContent =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                try {
+                    imageURI = uri
+                    if (imageURI != null){
+                        GlideLoader(this).loadImageUri(imageURI!!, ivPostImage)
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "image selection failed", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Image selection failed", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private fun showImageFromStorage() {
+        getContent.launch("image/*")
+    }
 
 
+    /*
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>,
                                             grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -279,12 +329,13 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED){
                 Constants.showImageFromStorage(this@CreatePostActivity)
             }else{
-                Toast.makeText(this, "oops! you didn't gave permission to app for access " +
-                        "storage, you can change it in your device's settings", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Grant storage permission", Toast.LENGTH_LONG).show()
             }
         }
     }
+     */
 
+    /*
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -306,6 +357,7 @@ class CreatePostActivity : BaseActivity(), OnClickListener {
             Log.e("image selection failed", "image has not been selected")
         }
     }
+     */
 
 
     private fun validateUserInput(): Boolean {
