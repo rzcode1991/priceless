@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/my_bg_color"
     tools:context=".BuyPostActivity">
 
     <LinearLayout
@@ -54,6 +55,7 @@
                         android:layout_margin="2dp"
                         android:text=""
                         android:textSize="15sp"
+                        android:fontFamily="@font/nexa_regular"
                         android:textColor="@color/colorPrimaryDark"/>
 
                 </LinearLayout>
@@ -71,6 +73,7 @@
                         android:layout_height="wrap_content"
                         android:text=""
                         android:textSize="20sp"
+                        android:fontFamily="@font/nexa_regular"
                         android:textColor="@color/colorPrimaryText"/>
 
                     <TextView
@@ -79,6 +82,7 @@
                         android:layout_height="wrap_content"
                         android:text=""
                         android:textSize="15sp"
+                        android:fontFamily="@font/nexa_regular"
                         android:layout_marginTop="8dp"
                         android:layout_marginBottom="4dp"
                         android:textColor="@color/colorPrimaryText"/>
@@ -94,6 +98,7 @@
                     android:layout_marginTop="4dp"
                     android:layout_marginBottom="4dp"
                     android:textSize="12sp"
+                    android:fontFamily="@font/nexa_regular"
                     android:textColor="#5E5A5A"
                     tools:ignore="HardcodedText" />
 
@@ -114,6 +119,7 @@
                 android:layout_height="wrap_content"
                 android:text=""
                 android:textSize="16sp"
+                android:fontFamily="@font/nexa_regular"
                 android:textColor="@color/colorPrimaryText"
                 android:layout_gravity="center"
                 android:gravity="center"
@@ -128,6 +134,7 @@
                 android:layout_height="wrap_content"
                 android:text=""
                 android:textSize="16sp"
+                android:fontFamily="@font/nexa_regular"
                 android:textColor="@color/colorPrimaryText"
                 android:layout_gravity="center"
                 android:gravity="center"
@@ -145,6 +152,7 @@
                 android:text="Open TON Keeper"
                 android:textColor="@color/colorPrimaryText"
                 android:textSize="11sp"
+                android:fontFamily="@font/nexa_regular"
                 android:padding="8dp"
                 android:background="@drawable/send_button_background"
                 android:layout_marginTop="5dp"
@@ -161,6 +169,7 @@
                 android:layout_marginBottom="20dp"
                 android:backgroundTint="@color/white"
                 android:text="Confirm Transaction"
+                android:fontFamily="@font/nexa_bold"
                 android:layout_gravity="center"
                 android:textColor="@color/black"
                 android:textAllCaps="false"
@@ -176,6 +185,7 @@
             android:text="You Should Add Your TON Wallet Address to Your Profile To Be Able To Buy This Post."
             android:textColor="@color/colorPrimaryText"
             android:textSize="14sp"
+            android:fontFamily="@font/nexa_regular"
             android:gravity="center"
             android:layout_gravity="center"
             android:layout_margin="20dp"
@@ -189,6 +199,7 @@
             android:text="Post Is Sold Or Deleted."
             android:textColor="@color/colorPrimaryText"
             android:textSize="14sp"
+            android:fontFamily="@font/nexa_regular"
             android:gravity="center"
             android:layout_gravity="center"
             android:layout_margin="20dp"

@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/my_bg_color"
     android:scrollbars="none"
     tools:context=".EditCommentActivity">
 
@@ -29,6 +30,7 @@
                 android:gravity="start|top"
                 android:padding="10dp"
                 android:visibility="visible"
+                android:fontFamily="@font/nexa_regular"
                 android:textSize="20sp"
                 android:textColor="#2b2d42"/>
 
@@ -40,6 +42,7 @@
                 android:gravity="start|top"
                 android:padding="10dp"
                 android:textSize="20sp"
+                android:fontFamily="@font/nexa_regular"
                 android:textColor="#2b2d42"
                 android:inputType="textMultiLine"
                 android:visibility="gone"
@@ -78,6 +81,7 @@
             android:text=""
             android:layout_gravity="start"
             android:layout_marginTop="8dp"
+            android:fontFamily="@font/nexa_regular"
             android:textSize="12sp"
             android:textColor="#5E5A5A"/>
 
@@ -88,6 +92,7 @@
             android:text="Private Comment"
             android:visibility="gone"
             android:layout_gravity="start"
+            android:fontFamily="@font/nexa_regular"
             android:layout_marginTop="4dp"
             android:textSize="12sp"
             android:textColor="#5E5A5A"
@@ -100,6 +105,7 @@
             android:layout_marginTop="20dp"
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
+            android:fontFamily="@font/nexa_bold"
             android:layout_marginBottom="10dp"
             android:backgroundTint="@color/white"
             android:text="Edit"
@@ -118,6 +124,7 @@
             android:layout_marginBottom="10dp"
             android:backgroundTint="@color/white"
             android:text="Cancel"
+            android:fontFamily="@font/nexa_bold"
             android:visibility="visible"
             android:textColor="@color/black"
             android:textAllCaps="false"
@@ -131,6 +138,7 @@
             android:layout_marginStart="30dp"
             android:layout_marginEnd="30dp"
             android:layout_marginBottom="10dp"
+            android:fontFamily="@font/nexa_bold"
             android:backgroundTint="@color/white"
             android:text="Delete Comment"
             android:textColor="@color/red"

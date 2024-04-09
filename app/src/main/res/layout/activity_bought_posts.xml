@@ -5,6 +5,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="top"
+    android:background="@color/my_bg_color"
     tools:context=".BoughtPostsActivity">
 
     <LinearLayout
@@ -41,6 +42,7 @@
                 android:layout_marginStart="5dp"
                 android:text="UserName"
                 android:textSize="15sp"
+                android:fontFamily="@font/nexa_regular"
                 android:textColor="@color/colorPrimaryDark"
                 tools:ignore="HardcodedText" />
 
@@ -51,6 +53,7 @@
             android:layout_height="wrap_content"
             android:text="Bought Posts Collection"
             android:textSize="18sp"
+            android:fontFamily="@font/nexa_bold"
             android:textColor="@color/colorPrimaryText"
             android:layout_gravity="center"
             android:layout_margin="20dp"

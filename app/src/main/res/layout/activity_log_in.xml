@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/my_bg_color"
     android:orientation="vertical"
     tools:context=".LogIn">
 
@@ -11,7 +12,8 @@
         android:layout_height="100dp"
         android:layout_marginTop="40dp"
         android:text="Priceless"
-        android:textColor="@color/black"
+        android:fontFamily="@font/nexa_regular"
+        android:textColor="@color/purple_500"
         android:textSize="35sp"
         android:gravity="center"
         tools:ignore="HardcodedText" />
@@ -41,6 +43,7 @@
                     android:id="@+id/et_email_login"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/nexa_regular"
                     android:minHeight="50dp"
                     android:padding="10dp"
                     android:inputType="textEmailAddress"
@@ -64,6 +67,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="50dp"
+                    android:fontFamily="@font/nexa_regular"
                     android:padding="10dp"
                     android:inputType="textPassword"
                     android:textSize="20sp" />
@@ -77,6 +81,7 @@
                 android:text="Forget Password?"
                 android:layout_margin="10dp"
                 android:gravity="start"
+                android:fontFamily="@font/nexa_regular"
                 android:textColor="@color/black"
                 android:textSize="15sp"
                 tools:ignore="HardcodedText" />
@@ -91,6 +96,7 @@
                 android:layout_marginBottom="10dp"
                 android:backgroundTint="@color/white"
                 android:text="LogIn"
+                android:fontFamily="@font/nexa_bold"
                 android:textColor="@color/black"
                 android:textAllCaps="false"
                 tools:ignore="HardcodedText" />
@@ -102,6 +108,7 @@
                 android:layout_gravity="center"
                 android:layout_margin="10dp"
                 android:text="or"
+                android:fontFamily="@font/nexa_regular"
                 android:textColor="@color/black"
                 android:textSize="12sp"
                 tools:ignore="HardcodedText" />
@@ -116,6 +123,7 @@
                 android:layout_marginBottom="10dp"
                 android:backgroundTint="@color/white"
                 android:text="SignUp"
+                android:fontFamily="@font/nexa_bold"
                 android:textColor="@color/black"
                 android:textAllCaps="false"
                 tools:ignore="HardcodedText" />
