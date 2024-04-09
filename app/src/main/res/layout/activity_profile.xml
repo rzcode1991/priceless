@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/my_bg_color"
     tools:context=".ProfileActivity">
 
     <androidx.appcompat.widget.Toolbar
@@ -18,6 +19,7 @@
             android:layout_height="wrap_content"
             android:text="PROFILE"
             android:gravity="center"
+            android:fontFamily="@font/nexa_regular"
             android:layout_gravity="center"
             android:textSize="30sp"
             android:textColor="@color/black"
@@ -75,6 +77,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="10dp"
+                    android:fontFamily="@font/nexa_regular"
                     android:inputType="text"
                     android:textSize="20sp" />
 
@@ -95,6 +98,7 @@
                     android:id="@+id/et_firstName_profile"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/nexa_regular"
                     android:padding="10dp"
                     android:inputType="text"
                     android:textSize="20sp" />
@@ -117,6 +121,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="10dp"
+                    android:fontFamily="@font/nexa_regular"
                     android:inputType="text"
                     android:textSize="20sp" />
 
@@ -138,6 +143,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="10dp"
+                    android:fontFamily="@font/nexa_regular"
                     android:inputType="textEmailAddress"
                     android:textSize="20sp" />
 
@@ -159,6 +165,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="10dp"
+                    android:fontFamily="@font/nexa_regular"
                     android:inputType="text"
                     android:textSize="20sp" />
 
@@ -180,6 +187,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="10dp"
+                    android:fontFamily="@font/nexa_regular"
                     android:inputType="number"
                     android:textSize="20sp" />
 
@@ -200,6 +208,7 @@
                     android:layout_margin="5dp"
                     android:gravity="center"
                     android:elevation="1dp"
+                    android:fontFamily="@font/nexa_bold"
                     android:background="@color/white"
                     android:text="Public Profile"
                     android:textColor="@color/black"
@@ -212,6 +221,7 @@
                     android:layout_weight="1"
                     android:layout_margin="5dp"
                     android:gravity="center"
+                    android:fontFamily="@font/nexa_bold"
                     android:elevation="1dp"
                     android:background="@color/white"
                     android:text="Private Profile"
@@ -230,6 +240,7 @@
                 android:layout_marginBottom="10dp"
                 android:backgroundTint="@color/white"
                 android:text="Save"
+                android:fontFamily="@font/nexa_bold"
                 android:textColor="@color/black"
                 android:textAllCaps="false"
                 tools:ignore="HardcodedText" />
@@ -244,6 +255,7 @@
                 android:layout_marginBottom="10dp"
                 android:backgroundTint="@color/white"
                 android:text="LogOut"
+                android:fontFamily="@font/nexa_bold"
                 android:textColor="@color/black"
                 android:textAllCaps="false"
                 tools:ignore="HardcodedText" />

@@ -5,6 +5,7 @@
     android:id="@+id/card_view_request_item"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="@color/my_bg_color"
     android:layout_margin="4dp"
     app:cardElevation="4dp">
 
@@ -37,6 +38,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
+                android:fontFamily="@font/nexa_regular"
                 android:text=""
                 android:textColor="@color/colorPrimaryText"
                 android:textSize="20sp" />
@@ -58,6 +60,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="8dp"
+                android:fontFamily="@font/nexa_bold"
                 android:backgroundTint="@color/white"
                 android:text="Accept"
                 android:textAllCaps="false"
@@ -71,6 +74,7 @@
                 android:layout_marginStart="8dp"
                 android:backgroundTint="@color/white"
                 android:text="Reject"
+                android:fontFamily="@font/nexa_bold"
                 android:textAllCaps="false"
                 android:textColor="@color/black"
                 tools:ignore="ButtonStyle,HardcodedText" />
