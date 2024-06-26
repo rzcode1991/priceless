@@ -1,5 +1,6 @@
 package com.example.priceless
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.net.Uri
 import android.util.Log
@@ -14,7 +15,7 @@ import com.google.firebase.storage.ktx.storage
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.tasks.await
 
-
+@SuppressLint("LongLogTag")
 class FireStoreClass {
 
     private val mFireStore: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -37,6 +38,7 @@ class FireStoreClass {
     }
 
 
+    @SuppressLint("LongLogTag")
     fun amIFollowingThatUser(currentUserID: String, otherUserID: String, callback: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
             .document(currentUserID)
@@ -57,6 +59,7 @@ class FireStoreClass {
     }
 
 
+    @SuppressLint("LongLogTag")
     fun acceptFollowRequest(receiverUserID: String, senderUserID: String, callback: (Boolean) -> Unit){
         mFireStore.collection(Constants.USERS)
             .document(receiverUserID)
@@ -117,6 +120,7 @@ class FireStoreClass {
     }
 
 
+    @SuppressLint("LongLogTag")
     suspend fun getFollowingList(userID: String): List<String>? = coroutineScope {
         return@coroutineScope try {
             val snapshot = mFireStore.collection(Constants.USERS)
@@ -146,6 +150,7 @@ class FireStoreClass {
         requestListener?.remove()
     }
 
+    @SuppressLint("LongLogTag")
     fun getReceivedRequestsRealTime(userID: String, callback: (ArrayList<FollowRequest>?) -> Unit) {
         val requests = ArrayList<FollowRequest>()
         val requestRef = mFireStore.collection(Constants.USERS)
@@ -857,6 +862,7 @@ class FireStoreClass {
         }
     }
 
+    @SuppressLint("LongLogTag")
     fun getPrivateCommentsFromUIDsForPostOwner(postID: String, postOwnerUID: String, uID: String,
                                                onComplete: (ArrayList<CommentStructure>?) -> Unit){
         mFireStore.collection(Constants.USERS)
@@ -1152,8 +1158,9 @@ class FireStoreClass {
             }
     }
 
+    @SuppressLint("SuspiciousIndentation")
     private fun deleteSubCollectionRepliesOfPrivateComment(postOwnerUID: String, postID: String,
-                                                         writerOfCommentUID: String, commentID: String,
+                                                           writerOfCommentUID: String, commentID: String,
                                                            onComplete: (Boolean) -> Unit){
         val privateRepliesCollection = mFireStore.collection(Constants.USERS)
             .document(postOwnerUID)

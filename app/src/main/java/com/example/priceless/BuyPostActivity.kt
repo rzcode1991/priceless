@@ -7,15 +7,26 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.util.Base64
 import android.view.View
 import android.view.View.OnClickListener
 import android.view.View.VISIBLE
-import android.widget.*
+import android.widget.Button
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.cardview.widget.CardView
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
 @Suppress("DEPRECATION")
 class BuyPostActivity : BaseActivity(), OnClickListener {
@@ -283,35 +294,65 @@ class BuyPostActivity : BaseActivity(), OnClickListener {
                 btnConfirmTransaction.visibility = VISIBLE
                 showErrorSnackBar("You Have Used This Transaction Before.", true)
             }else{
-                val amountOfTransactionInTon = BigDecimal(transactionValue).divide(BigDecimal("1000000000"))
-                val postPriceInBigDecimal = BigDecimal(post?.price)
-                if (transactionSource == currentUser?.wallet &&
-                    transactionDestination == postOwnerUser?.wallet &&
-                    amountOfTransactionInTon == postPriceInBigDecimal){
-                    transactionOK()
-                }else{
-                    progressBar.visibility = View.GONE
-                    btnConfirmTransaction.visibility = VISIBLE
-                    showErrorSnackBar("Invalid Transaction", true)
+                if (currentUser != null && postOwnerUser != null){
+
+                    val amountOfTransactionInTon = BigDecimal(transactionValue).divide(BigDecimal("1000000000"))
+                    val postPriceInBigDecimal = BigDecimal(post?.price)
+                    if (
+                        compareTonCoinAddresses(transactionSource, currentUser!!.wallet) &&
+                        compareTonCoinAddresses(transactionDestination, postOwnerUser!!.wallet) &&
+                        amountOfTransactionInTon == postPriceInBigDecimal
+                        ){
+                        transactionOK()
+                    }else{
+                        progressBar.visibility = View.GONE
+                        btnConfirmTransaction.visibility = VISIBLE
+                        showErrorSnackBar("Invalid Transaction", true)
+                    }
                 }
             }
         }
     }
 
+    private fun base64UrlToByteArray(base64Url: String): ByteArray {
+        return Base64.decode(base64Url, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+    }
+
+    private fun byteArrayToHex(byteArray: ByteArray): String {
+        return byteArray.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun compareTonCoinAddresses(apiAddress: String, appAddress: String): Boolean {
+
+        val apiAddressHex = apiAddress.removePrefix("0:")
+        val appAddressBytes = base64UrlToByteArray(appAddress)
+        val appAddressHex = byteArrayToHex(appAddressBytes)
+        val appAddressHexFinal = appAddressHex.substring(4, appAddressHex.length - 4)
+
+        return apiAddressHex.equals(appAddressHexFinal, ignoreCase = true)
+    }
+
+
     private suspend fun getTransaction(){
         val result = TonCenter().makeHttpRequest(currentUser!!.wallet)
         if (result.isSuccess) {
-            val transaction = result.getOrNull()
-            if (transaction != null) {
-                transactionSource = transaction.source
-                transactionDestination = transaction.destination
-                transactionValue = transaction.value
-                transactionHash = transaction.bodyHash
+            val tonResponse = result.getOrNull()
+            if (tonResponse != null) {
+
+                val source = tonResponse.source
+                transactionSource = source
+
+                val destination = tonResponse.destination
+                transactionDestination = destination
+
+                transactionValue = tonResponse.value
+
+                transactionHash = tonResponse.bodyHash
             }
         } else {
             val exception = result.exceptionOrNull()
             if (exception != null) {
-                Log.e("Error getting transaction", exception.message.toString(), exception)
+                Log.e("my_tag", exception.message.toString(), exception)
             }
         }
 

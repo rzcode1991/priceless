@@ -334,7 +334,7 @@ class FireStoreListenerService : Service() {
         }else{
             PendingIntent.getActivity(
                 this, notificationId, intent,
-                PendingIntent.FLAG_ONE_SHOT
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
             )
         }
 
