@@ -1,7 +1,11 @@
 package com.example.priceless
 
+import android.content.Intent
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.TextUtils
+import android.text.style.UnderlineSpan
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.TextView
@@ -45,6 +49,9 @@ class SignUpActivity : BaseActivity() {
         btnSignUp = findViewById(R.id.btn_register_signup)
         auth = Firebase.auth
 
+        val spannableString = SpannableString(tvTerms.text)
+        spannableString.setSpan(UnderlineSpan(), 0, spannableString.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        tvTerms.text = spannableString
 
         tvGoToLogIn.setOnClickListener {
             onBackPressed()
@@ -54,6 +61,11 @@ class SignUpActivity : BaseActivity() {
 
         btnSignUp.setOnClickListener {
             registerUser()
+        }
+
+        tvTerms.setOnClickListener {
+            val intent = Intent(this, TermsActivity::class.java)
+            startActivity(intent)
         }
 
 
